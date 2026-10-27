@@ -43,7 +43,7 @@ function healthPayload(filePath = '/decks/demo.html'): string {
   return JSON.stringify({
     ok: true,
     revision: 'r',
-    version: '0.0.0',
+    version: '0.1.0',
     filePath
   });
 }

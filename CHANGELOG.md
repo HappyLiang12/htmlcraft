@@ -36,8 +36,9 @@
 - Image upload bypassed the top-level lock and could rewrite a locked subtree;
   uploads now check the owning wrapper.
 - MCP `open_editor` reported success when the spawned host answered
-  `/api/health` but its editor shell was broken; it now requires a healthy
-  editor probe and surfaces `editor-failed`.
+  `/api/health` but its editor shell was broken; a broken editor now fails the
+  open instead of reporting success (`editor-timeout` after the spawn timeout;
+  `editor-failed` when the CLI exits non-zero).
 - The credential store could drift from the live host: a stale token or port
   was not adopted, and a deck switch left the old deck's credential behind;
   `open` now rewrites the live identity and a switch moves the credential.
@@ -68,7 +69,8 @@
   traffic keeps bearer auth.
 - Documentation updated across the root README, SECURITY, and architecture
   docs, the published package README and SECURITY, and the skill references for
-  the credential store, liveness checks, and drill-in editing.
+  the credential store and liveness checks; drill-in editing is documented in
+  the README, `docs/architecture.md`, and `docs/contract.md`.
 
 ### Notes
 
