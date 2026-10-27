@@ -263,7 +263,7 @@ hex strings and are shortened here.
 
 ```json
 {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"example","version":"1.0.0"}}}
-{"jsonrpc":"2.0","id":1,"result":{"protocolVersion":"2024-11-05","capabilities":{"tools":{"listChanged":true},"resources":{"listChanged":true}},"serverInfo":{"name":"htmlppt","version":"0.0.0"},"instructions":"Use htmlppt://contract and htmlppt://authoring before editing a deck."}}
+{"jsonrpc":"2.0","id":1,"result":{"protocolVersion":"2024-11-05","capabilities":{"tools":{"listChanged":true},"resources":{"listChanged":true}},"serverInfo":{"name":"htmlppt","version":"0.1.0"},"instructions":"Use htmlppt://contract and htmlppt://authoring before editing a deck."}}
 ```
 
 The server negotiates the protocol version supported by the client/SDK. Send
