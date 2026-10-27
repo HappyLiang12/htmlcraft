@@ -62,7 +62,7 @@ interface ResponseHandle {
   once(event: 'finish' | 'close', listener: () => void): unknown;
 }
 
-export const HOST_VERSION = '0.0.0';
+export const HOST_VERSION = '0.1.0';
 
 const HISTORY_LIMIT = 20;
 const WATCH_INTERVAL_MS = 50;

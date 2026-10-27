@@ -461,7 +461,7 @@ export async function runCli(
   program
     .name('htmlppt')
     .description('Visual editor and tooling for static HTML presentations')
-    .version('0.0.0')
+    .version('0.1.0')
     .exitOverride();
   program.configureOutput({
     writeOut: (text) => io.stdout(text.replace(/\n$/, '')),

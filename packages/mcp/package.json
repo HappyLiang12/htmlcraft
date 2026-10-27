@@ -1,6 +1,6 @@
 {
   "name": "@htmlppt/mcp",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
@@ -15,15 +15,15 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@htmlppt/core": "0.0.0",
-    "@htmlppt/host": "0.0.0",
-    "@htmlppt/renderer": "0.0.0",
-    "@htmlppt/runtime": "0.0.0",
+    "@htmlppt/core": "0.1.0",
+    "@htmlppt/host": "0.1.0",
+    "@htmlppt/renderer": "0.1.0",
+    "@htmlppt/runtime": "0.1.0",
     "@modelcontextprotocol/sdk": "^1.32.1",
     "zod": "^3.24.0"
   },
   "devDependencies": {
-    "@htmlppt/test-utils": "0.0.0",
+    "@htmlppt/test-utils": "0.1.0",
     "tsup": "^8.3.0",
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"

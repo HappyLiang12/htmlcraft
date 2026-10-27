@@ -10,7 +10,7 @@ export function createMcpServer(
   options: CreateMcpServerOptions = {}
 ): McpServer {
   const server = new McpServer(
-    { name: 'htmlppt', version: '0.0.0' },
+    { name: 'htmlppt', version: '0.1.0' },
     { instructions: 'Use htmlppt://contract and htmlppt://authoring before editing a deck.' }
   );
   registerTools(server, options);
