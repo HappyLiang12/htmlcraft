@@ -456,7 +456,7 @@ describe('htmlppt cli', () => {
     const code = await runCli(['--version'], output.io);
 
     expect(code).toBe(0);
-    expect(output.stdout.join('\n')).toContain('0.0.0');
+    expect(output.stdout.join('\n')).toContain('0.1.0');
   });
 
   it('rejects a zero size with the size error', async () => {
@@ -3419,7 +3419,7 @@ describe('htmlppt cli as a real process', () => {
       );
       const response = await server.waitForJsonRpc(1);
       expect(response.result).toMatchObject({
-        serverInfo: { name: 'htmlppt', version: '0.0.0' }
+        serverInfo: { name: 'htmlppt', version: '0.1.0' }
       });
       server.child.stdin.end();
       expect(await server.waitForExit(10_000)).toBe(0);
