@@ -207,6 +207,26 @@ the agent skill in the same change.
 Contributors without merge rights should push their branch and open a pull
 request instead of merging locally.
 
+## Publishing
+
+Releases are manual and never run from a pull request:
+
+1. In repository settings, create the environment `npm-publish` and require at
+   least one reviewer. Add `NPM_TOKEN` as an environment secret (preferred) or
+   repository secret: a granular token scoped to the `htmlppt` package with
+   publish permission, 2FA bypass, and a short expiry. Prefer npm trusted
+   publishing once it is configured on npmjs.com; then delete the token and
+   keep `id-token: write` for provenance.
+2. Merge the release branch to `main` and wait for the CI matrix to pass.
+3. Run the `Release` workflow from `main`. `dry_run` defaults to `true`; review
+   the dry-run log before dispatching with it disabled.
+4. The job refuses to publish an already-published version, runs
+   `npm audit --omit=dev`, verifies the generated license notices, and runs the
+   package smoke test before `npm publish --provenance`.
+
+Tags, GitHub releases, and npm publishes need explicit approval for each
+release; a previous approval does not carry over.
+
 ## Documentation changes
 
 - User-facing behavior belongs in `README.md`, `docs/contract.md`,

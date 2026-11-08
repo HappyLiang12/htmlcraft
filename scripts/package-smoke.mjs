@@ -348,6 +348,16 @@ async function main() {
       shippedMaps.length === 0,
       `source maps must not ship: ${shippedMaps.join(', ')}`
     );
+    const leakedBuildPaths = [
+      ['CLI', cliSource],
+      ['MCP', mcpSource]
+    ]
+      .filter(([, source]) => source.includes(repoRoot))
+      .map(([label]) => label);
+    assert(
+      leakedBuildPaths.length === 0,
+      `bundles must not contain the build path ${repoRoot}: ${leakedBuildPaths.join(', ')}`
+    );
     console.log('  bins, editor assets, skill, and package docs are present');
 
     const cli = async (label, args, options = {}) =>
