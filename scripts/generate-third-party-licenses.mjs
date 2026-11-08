@@ -1,0 +1,165 @@
+#!/usr/bin/env node
+// Generates packages/htmlppt/THIRD-PARTY-LICENSES.md from the packages that
+// actually end up in the built CLI and MCP bundles. The editor bundle is built
+// by Vite and has no source map in the published artifact, so its runtime
+// dependencies are listed explicitly.
+import { readFile, readdir, stat, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const repoRoot = fileURLToPath(new URL('..', import.meta.url));
+const packageDir = path.join(repoRoot, 'packages', 'htmlppt');
+const outFile = path.join(packageDir, 'THIRD-PARTY-LICENSES.md');
+const sourceMaps = [
+  path.join(packageDir, 'dist', 'cli.js.map'),
+  path.join(packageDir, 'dist', 'mcp.js.map')
+];
+const editorPackages = ['react', 'react-dom', 'scheduler'];
+const externalPackages = ['playwright-core'];
+const licenseFilePattern = /^(license|licence|copying|notice)/i;
+
+async function exists(filePath) {
+  try {
+    await stat(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function readJson(filePath) {
+  return JSON.parse(await readFile(filePath, 'utf8'));
+}
+
+function packageNameFromSource(source, baseDir) {
+  if (source.includes('://')) return null;
+  const marker = 'node_modules/';
+  const markerIndex = source.lastIndexOf(marker);
+  if (markerIndex < 0) return null;
+  const before = source.slice(0, markerIndex + marker.length);
+  const after = source.slice(markerIndex + marker.length);
+  const parts = after.split('/');
+  const name = parts[0]?.startsWith('@')
+    ? `${parts[0]}/${parts[1] ?? ''}`
+    : parts[0];
+  return name
+    ? { name, directory: path.resolve(baseDir, before, name) }
+    : null;
+}
+
+async function bundledPackages() {
+  const directories = new Map();
+  for (const sourceMap of sourceMaps) {
+    if (!(await exists(sourceMap))) {
+      throw new Error(
+        `Built source map not found: ${sourceMap}. Run "npm run build" first.`
+      );
+    }
+    const map = await readJson(sourceMap);
+    for (const source of map.sources ?? []) {
+      const found = packageNameFromSource(source, path.dirname(sourceMap));
+      if (found && (await exists(path.join(found.directory, 'package.json')))) {
+        directories.set(found.directory, found.name);
+      }
+    }
+  }
+  for (const name of editorPackages) {
+    const directory = path.join(repoRoot, 'node_modules', name);
+    if (await exists(path.join(directory, 'package.json'))) {
+      directories.set(directory, name);
+    }
+  }
+  return directories;
+}
+
+async function licenseTexts(directory) {
+  const entries = await readdir(directory);
+  const files = entries
+    .filter((entry) => licenseFilePattern.test(entry))
+    .sort((left, right) => left.localeCompare(right));
+  const texts = [];
+  for (const file of files) {
+    const filePath = path.join(directory, file);
+    const info = await stat(filePath);
+    if (!info.isFile()) continue;
+    const text = (await readFile(filePath, 'utf8'))
+      .replace(/\r\n/g, '\n')
+      .trim();
+    if (text.length > 0) texts.push({ file, text });
+  }
+  return texts;
+}
+
+function licenseLabel(value) {
+  if (typeof value === 'string') return value;
+  if (value === undefined || value === null) return 'UNKNOWN';
+  return JSON.stringify(value);
+}
+
+function fence(text) {
+  return `\`\`\`\`text\n${text}\n\`\`\`\``;
+}
+
+const directories = await bundledPackages();
+const packages = [];
+for (const [directory, expectedName] of directories) {
+  const manifest = await readJson(path.join(directory, 'package.json'));
+  const texts = await licenseTexts(directory);
+  packages.push({
+    name: manifest.name ?? expectedName,
+    version: manifest.version ?? '0.0.0',
+    license: licenseLabel(manifest.license),
+    texts,
+    directory
+  });
+}
+packages.sort((left, right) =>
+  left.name === right.name
+    ? left.version.localeCompare(right.version)
+    : left.name.localeCompare(right.name)
+);
+
+const missing = packages.filter((entry) => entry.texts.length === 0);
+const sections = packages.map((entry) => {
+  const heading = `## ${entry.name} ${entry.version}`;
+  const label = `License: ${entry.license}`;
+  const body =
+    entry.texts.length === 0
+      ? '_No license file was found in the installed package. See the package metadata and repository._'
+      : entry.texts.map((item) => fence(item.text)).join('\n\n');
+  return `${heading}\n\n${label}\n\n${body}`;
+});
+
+const external = externalPackages
+  .map(
+    (name) =>
+      `- \`${name}\` is installed as a separate runtime dependency and is not bundled; see its own package for the Apache-2.0 license text.`
+  )
+  .join('\n');
+
+const output = `# Third-party licenses
+
+htmlppt is MIT-licensed; see [LICENSE](LICENSE).
+
+This package bundles the third-party packages listed below. Their license texts
+are reproduced here to satisfy the attribution requirements of those licenses.
+
+${external}
+
+Generated by \`scripts/generate-third-party-licenses.mjs\` from the built CLI and
+MCP source maps. Do not edit this file by hand; run \`npm run build\` again.
+
+${sections.join('\n\n---\n\n')}
+`;
+
+await writeFile(outFile, output, 'utf8');
+console.log(
+  `Wrote ${outFile} (${packages.length} bundled packages${
+    missing.length > 0 ? `, ${missing.length} without a license file` : ''
+  }).`
+);
+if (missing.length > 0) {
+  console.warn(
+    `Missing license files: ${missing.map((entry) => entry.name).join(', ')}`
+  );
+}

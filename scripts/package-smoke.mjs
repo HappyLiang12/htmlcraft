@@ -337,6 +337,17 @@ async function main() {
     assert(cliSource.startsWith('#!/usr/bin/env node'), 'CLI bin has no node shebang');
     const mcpSource = await readFile(mcpBin, 'utf8');
     assert(mcpSource.startsWith('#!/usr/bin/env node'), 'MCP bin has no node shebang');
+    await assertExists(
+      join(installedDir, 'THIRD-PARTY-LICENSES.md'),
+      'third-party license notices'
+    );
+    const shippedMaps = (await readdir(join(installedDir, 'dist'))).filter((name) =>
+      name.endsWith('.map')
+    );
+    assert(
+      shippedMaps.length === 0,
+      `source maps must not ship: ${shippedMaps.join(', ')}`
+    );
     console.log('  bins, editor assets, skill, and package docs are present');
 
     const cli = async (label, args, options = {}) =>
@@ -350,6 +361,13 @@ async function main() {
     const help = await cli('htmlppt --help', ['--help']);
     assert(help.stdout.includes('Usage: htmlppt'), 'htmlppt --help did not print usage');
     assert(help.stdout.includes('open [options] <file>'), 'help is missing the open command');
+
+    console.log('4b. running htmlppt --version');
+    const version = await cli('htmlppt --version', ['--version']);
+    assert(
+      version.stdout.trim() === installedManifest.version,
+      `htmlppt --version printed ${JSON.stringify(version.stdout.trim())}, expected ${JSON.stringify(installedManifest.version)}`
+    );
 
     console.log('5. running htmlppt new and validate');
     const newDeck = await cli('htmlppt new', ['new', 'deck.html', '--slides', '2']);

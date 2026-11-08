@@ -1,0 +1,58 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Run npm publish --dry-run instead of publishing
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org
+      - name: Use npm 11
+        run: npm install -g npm@11
+      - name: Install
+        run: npm ci
+      - name: Production audit
+        run: npm audit --omit=dev
+      - name: Build
+        run: npm run build
+      - name: Check generated license notices
+        run: git diff --exit-code -- packages/htmlppt/THIRD-PARTY-LICENSES.md
+      - name: Package smoke
+        run: node scripts/package-smoke.mjs
+      - name: Check version is unpublished
+        run: |
+          VERSION=$(node -p "require('./packages/htmlppt/package.json').version")
+          if npm view "htmlppt@$VERSION" version >/dev/null 2>&1; then
+            echo "htmlppt@$VERSION is already published"
+            exit 1
+          fi
+      # The first publish uses the NPM_TOKEN secret. After trusted publishing is
+      # configured on npmjs.com, remove these NODE_AUTH_TOKEN lines and the
+      # secret; the id-token permission above stays for provenance.
+      - name: Publish dry run
+        if: inputs.dry_run
+        run: npm publish -w htmlppt --access public --dry-run
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish with provenance
+        if: ${{ !inputs.dry_run }}
+        run: npm publish -w htmlppt --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

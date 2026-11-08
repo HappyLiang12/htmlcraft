@@ -1,9 +1,21 @@
 # Changelog
 
-## 0.1.0 - 2026-10-27
+## 0.1.0 - 2026-11-07
 
 ### Added
 
+- Component-first selection: a slide-level click selects the innermost visible
+  component under the pointer, the hover outline previews exactly that target,
+  and click and drag agree; double-click, Enter, the OBJECTS chevron, or the
+  Inspector Enter action drills in without a hotkey.
+- SVG-internal dragging: a selected shape or nested `<svg>` moves through a
+  post-multiplied `transform="translate(...)"` in local user units, while
+  CSS-owned transforms stay selectable but drag-inert.
+- Nested structural operations: delete, duplicate, and copy/paste inside the
+  parent at any depth, with fresh `data-ppt-el` ids on copies; group and ungroup
+  remain top-level operations.
+- Table cells remain selectable for the table toolbar and native text
+  selection, but cannot be geometry-dragged; the drag hint explains the rule.
 - Local per-deck credential store under `~/.htmlppt/decks` (override with
   `HTMLPPT_HOME`) that records the host port and capability token, so
   `htmlppt open` reuses the same URL across restarts until `htmlppt stop`.
@@ -27,6 +39,16 @@
 
 ### Fixed
 
+- Nested edits respect locked, hidden, and group wrappers for geometry,
+  appearance, copy/paste, duplicate, and delete, including a guarded paste
+  destination.
+- Paste keeps the clipboard kind: HTML stays HTML, SVG internals stay in an SVG
+  destination, mixed or table-internal destinations are refused with a specific
+  hint, and an empty paste does not commit.
+- Chart data edits reselect the owning figure after regeneration so the next
+  gesture cannot target a stale chart child.
+- Multi-selection chart and table panels are gated on a single selection, and
+  mixed-depth selections no longer expose structural commands.
 - Locked or hidden containers exposed an enter chevron and could be entered
   with Enter; they now show no enter affordance and the shared predicate
   refuses them.
@@ -64,6 +86,9 @@
 
 ### Changed
 
+- Component selection is editor-only: paths are not persisted, the deck format
+  and MCP surface are unchanged, and every move is an inline style or SVG
+  transform attribute.
 - Browser sessions use a 30-day HttpOnly `SameSite=Strict` cookie renewed on
   successful page loads; the tokenized URL is exchanged once, and CLI and MCP
   traffic keeps bearer auth.

@@ -7,6 +7,14 @@ every object keeps a stable id so the editor and AI agents can address it.
 This package bundles the editor assets and the `htmlppt` agent skill, so it works
 without a build step or extra downloads.
 
+## Install
+
+```bash
+npm install -g htmlppt
+# or run without installing
+npx -y htmlppt --help
+```
+
 ## CLI
 
 ```bash
@@ -42,11 +50,14 @@ Add the server to an MCP client:
 {
   "mcpServers": {
     "htmlppt": {
-      "command": "htmlppt-mcp"
+      "command": "npx",
+      "args": ["-y", "htmlppt", "mcp"]
     }
   }
 }
 ```
+
+If you installed the package globally, `"command": "htmlppt-mcp"` works too.
 
 The server exposes deck tools (`create_deck`, `validate_deck`, `set_text`,
 `open_editor`, and more) plus the `htmlppt://contract` and
@@ -55,10 +66,13 @@ The server exposes deck tools (`create_deck`, `validate_deck`, `set_text`,
 ## Requirements
 
 - Node.js 20 or newer.
+- Chrome, Edge, or Chromium for PDF/PNG export; set `HTMLPPT_CHROMIUM` to choose
+  one explicitly.
 - No telemetry and no remote calls: the editor and MCP server only touch the
   deck you open.
 
 ## License
 
-MIT. See [LICENSE](LICENSE); report vulnerabilities as described in
-[SECURITY.md](SECURITY.md).
+MIT. See [LICENSE](LICENSE); third-party notices are in
+[THIRD-PARTY-LICENSES.md](THIRD-PARTY-LICENSES.md); report vulnerabilities as
+described in [SECURITY.md](SECURITY.md).
