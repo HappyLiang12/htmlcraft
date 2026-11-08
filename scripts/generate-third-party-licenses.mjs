@@ -84,6 +84,9 @@ async function licenseTexts(directory) {
     if (!info.isFile()) continue;
     const text = (await readFile(filePath, 'utf8'))
       .replace(/\r\n/g, '\n')
+      .split('\n')
+      .map((line) => line.replace(/[ \t]+$/, ''))
+      .join('\n')
       .trim();
     if (text.length > 0) texts.push({ file, text });
   }
