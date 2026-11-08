@@ -7,3 +7,11 @@ playwright-report/
 *.log
 .DS_Store
 .htmlppt/
+.env
+.env.*
+!.env.example
+.npmrc
+*.pem
+*.key
+*.p12
+*.pfx
