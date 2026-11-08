@@ -53,7 +53,8 @@
                   "type": "array",
                   "items": {
                     "type": "integer",
-                    "minimum": 0
+                    "minimum": 0,
+                    "maximum": 9007199254740991
                   }
                 }
               },
@@ -71,7 +72,6 @@
         "slideId",
         "html"
       ],
-      "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
   },
@@ -97,9 +97,9 @@
           "description": "A supported image data URL, an absolute http(s) URL (validated, never fetched), or a local image path resolved against the server working directory. Local files are embedded as data URLs."
         },
         "width": {
+          "description": "Optional width in pixels, at least 1. Height follows the 16:9 default ratio. Defaults to 480.",
           "type": "number",
-          "minimum": 1,
-          "description": "Optional width in pixels, at least 1. Height follows the 16:9 default ratio. Defaults to 480."
+          "minimum": 1
         },
         "target": {
           "anyOf": [
@@ -136,7 +136,8 @@
                   "type": "array",
                   "items": {
                     "type": "integer",
-                    "minimum": 0
+                    "minimum": 0,
+                    "maximum": 9007199254740991
                   }
                 }
               },
@@ -154,7 +155,6 @@
         "slideId",
         "source"
       ],
-      "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
   },
@@ -192,7 +192,6 @@
       "required": [
         "path"
       ],
-      "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
   },
@@ -214,10 +213,14 @@
         },
         "rows": {
           "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991,
           "description": "Row count including the header row; 1-50."
         },
         "columns": {
           "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991,
           "description": "Column count; 1-20."
         },
         "target": {
@@ -255,7 +258,8 @@
                   "type": "array",
                   "items": {
                     "type": "integer",
-                    "minimum": 0
+                    "minimum": 0,
+                    "maximum": 9007199254740991
                   }
                 }
               },
@@ -274,7 +278,6 @@
         "rows",
         "columns"
       ],
-      "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
   },
@@ -294,11 +297,13 @@
         },
         "width": {
           "type": "integer",
-          "exclusiveMinimum": 0
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991
         },
         "height": {
           "type": "integer",
-          "exclusiveMinimum": 0
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991
         },
         "slides": {
           "type": "integer",
@@ -309,14 +314,13 @@
           "type": "string"
         },
         "runtime": {
-          "type": "boolean",
-          "description": "Include the presentation runtime. Defaults to true."
+          "description": "Include the presentation runtime. Defaults to true.",
+          "type": "boolean"
         }
       },
       "required": [
         "path"
       ],
-      "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
   },
@@ -341,7 +345,6 @@
         "path",
         "slideId"
       ],
-      "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
   },
@@ -366,7 +369,6 @@
         "path",
         "slideId"
       ],
-      "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
   },
@@ -382,25 +384,24 @@
           "description": "Deck HTML path. Relative paths resolve against the server working directory."
         },
         "format": {
+          "default": "html",
+          "description": "html writes a cleaned standalone file; pdf and png render the slides.",
           "type": "string",
           "enum": [
             "html",
             "pdf",
             "png"
-          ],
-          "default": "html",
-          "description": "html writes a cleaned standalone file; pdf and png render the slides."
+          ]
         },
         "outDir": {
+          "description": "Output directory, resolved against the deck directory and confined to it. Defaults to the deck directory.",
           "type": "string",
-          "minLength": 1,
-          "description": "Output directory, resolved against the deck directory and confined to it. Defaults to the deck directory."
+          "minLength": 1
         }
       },
       "required": [
         "path"
       ],
-      "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
   },
@@ -410,8 +411,8 @@
     "inputSchema": {
       "type": "object",
       "properties": {},
-      "additionalProperties": false,
-      "$schema": "http://json-schema.org/draft-07/schema#"
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "additionalProperties": false
     }
   },
   {
@@ -465,7 +466,8 @@
                   "type": "array",
                   "items": {
                     "type": "integer",
-                    "minimum": 0
+                    "minimum": 0,
+                    "maximum": 9007199254740991
                   }
                 }
               },
@@ -483,7 +485,6 @@
         "slideId",
         "target"
       ],
-      "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
   },
@@ -502,7 +503,6 @@
       "required": [
         "path"
       ],
-      "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
   },
@@ -524,7 +524,8 @@
         },
         "toIndex": {
           "type": "integer",
-          "minimum": 0
+          "minimum": 0,
+          "maximum": 9007199254740991
         }
       },
       "required": [
@@ -532,7 +533,6 @@
         "slideId",
         "toIndex"
       ],
-      "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
   },
@@ -553,14 +553,13 @@
           "maximum": 65535
         },
         "open": {
-          "type": "boolean",
-          "description": "Open a browser. Defaults to false."
+          "description": "Open a browser. Defaults to false.",
+          "type": "boolean"
         }
       },
       "required": [
         "path"
       ],
-      "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
   },
@@ -585,7 +584,6 @@
         "path",
         "slideId"
       ],
-      "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
   },
@@ -640,7 +638,8 @@
                   "type": "array",
                   "items": {
                     "type": "integer",
-                    "minimum": 0
+                    "minimum": 0,
+                    "maximum": 9007199254740991
                   }
                 }
               },
@@ -658,7 +657,6 @@
         "slideId",
         "target"
       ],
-      "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
   },
@@ -713,7 +711,8 @@
                   "type": "array",
                   "items": {
                     "type": "integer",
-                    "minimum": 0
+                    "minimum": 0,
+                    "maximum": 9007199254740991
                   }
                 }
               },
@@ -735,7 +734,6 @@
         "target",
         "html"
       ],
-      "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
   },
@@ -764,7 +762,6 @@
         "slideId",
         "notes"
       ],
-      "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
   },
@@ -806,7 +803,6 @@
         "slideId",
         "background"
       ],
-      "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
   },
@@ -822,19 +818,18 @@
           "description": "Deck HTML path. Relative paths resolve against the server working directory."
         },
         "slideIds": {
+          "minItems": 1,
           "type": "array",
           "items": {
             "type": "string",
             "minLength": 1
-          },
-          "minItems": 1
+          }
         }
       },
       "required": [
         "path",
         "slideIds"
       ],
-      "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
   },
@@ -889,7 +884,8 @@
                   "type": "array",
                   "items": {
                     "type": "integer",
-                    "minimum": 0
+                    "minimum": 0,
+                    "maximum": 9007199254740991
                   }
                 }
               },
@@ -903,6 +899,9 @@
         },
         "styles": {
           "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
           "additionalProperties": {
             "type": [
               "string",
@@ -918,7 +917,6 @@
         "target",
         "styles"
       ],
-      "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
   },
@@ -973,7 +971,8 @@
                   "type": "array",
                   "items": {
                     "type": "integer",
-                    "minimum": 0
+                    "minimum": 0,
+                    "maximum": 9007199254740991
                   }
                 }
               },
@@ -995,7 +994,6 @@
         "target",
         "text"
       ],
-      "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
   },
@@ -1030,7 +1028,6 @@
         "slideId",
         "transition"
       ],
-      "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
   },
@@ -1085,7 +1082,8 @@
                   "type": "array",
                   "items": {
                     "type": "integer",
-                    "minimum": 0
+                    "minimum": 0,
+                    "maximum": 9007199254740991
                   }
                 }
               },
@@ -1104,6 +1102,9 @@
             },
             {
               "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
               "additionalProperties": {}
             }
           ],
@@ -1116,7 +1117,6 @@
         "target",
         "chart"
       ],
-      "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
   },
@@ -1145,7 +1145,6 @@
         "slideId",
         "html"
       ],
-      "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
   },
@@ -1164,7 +1163,6 @@
       "required": [
         "path"
       ],
-      "additionalProperties": false,
       "$schema": "http://json-schema.org/draft-07/schema#"
     }
   }
