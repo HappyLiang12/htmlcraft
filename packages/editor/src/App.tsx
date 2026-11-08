@@ -51,8 +51,7 @@ import {
 import {
   chartFigure,
   chartJson,
-  refreshChart,
-  refreshCharts,
+  refreshOwnedCharts,
   withChartData
 } from './commands/charts';
 import {
@@ -132,15 +131,36 @@ import {
   type SelectionTarget
 } from './selection';
 import {
+  componentLabel,
+  componentPath,
+  isSvgInternal,
+  isTableInternal,
+  resolveComponent
+} from './component-target';
+import {
   buildSlideSrcDoc,
   commitSlide,
   EDITING_ATTRIBUTE,
   FRAME_SLIDE_ATTRIBUTE,
   frameSlideElement
 } from './slide-doc';
+import { revealPreviewSlide } from './frame-reveal';
+import { measureSlideBox } from './play-fit';
+import {
+  canvasCrop,
+  sameMeasuredBox,
+  stageBoxFor,
+  type MeasuredBox
+} from './canvas-fit';
+import {
+  resolveSelectedTextTarget,
+  type TextTargetResult
+} from './text-target';
 import type { PastedObjectGeometry } from './object-ops';
 import {
   applyObjectCommand,
+  blockedPathAncestor,
+  guardedPathElement,
   isGroupElement,
   isHiddenElement,
   isLockedElement,
@@ -151,6 +171,7 @@ import {
   angleDelta,
   applyRect,
   applyRotation,
+  applySvgTranslate,
   centerOf,
   containingBlockOffset,
   moveTargets,
@@ -160,6 +181,8 @@ import {
   rotationFromPointer,
   rotationOf,
   snapAngle,
+  svgCssTransformOverride,
+  svgUserDelta,
   type TransformTarget
 } from './transform';
 import {
@@ -191,6 +214,7 @@ import {
   Inspector,
   type InspectorChartState,
   type InspectorStyleState,
+  type InspectorTextAction,
   type ObjectActionState
 } from './components/Inspector';
 import {
@@ -213,7 +237,12 @@ import {
   reorderSlides,
   type SlideOpsContext
 } from './slide-ops';
-import { mapShortcut, isEditableShortcutTarget } from './shortcuts';
+import {
+  isEditableShortcutTarget,
+  mapShortcut,
+  mapTextShortcut,
+  type TextShortcutAction
+} from './shortcuts';
 import {
   isSwitchedFileConflict,
   useDeckController,
@@ -229,20 +258,15 @@ interface EditHintState {
   gesture: number;
 }
 
-// Div shapes and text boxes are leaf objects; a layout div with element
-// children keeps its original semantic text target rather than becoming the
-// edit surface itself.
-function isLeafTextElement(element: HTMLElement): boolean {
-  if (element.tagName !== 'DIV') return true;
-  return Array.from(element.children).every((child) => child.tagName === 'BR');
-}
-
 const SNAP_THRESHOLD_SCREEN_PX = 6;
 const MIN_RESIZE_DESIGN_PX = 4;
 const DRAG_THRESHOLD_SCREEN_PX = 2;
 const MIN_SCALE = 0.1;
 const MAX_SCALE = 3;
 const ZOOM_STEP = 1.2;
+// Set on the frame's document element only; it never enters the slide markup
+// that commitSlide serializes.
+const HOVER_ATTRIBUTE = 'data-ppt-hover';
 
 function sameSelection(a: SelectionTarget, b: SelectionTarget): boolean {
   return (
@@ -267,6 +291,19 @@ interface DragTarget extends TransformTarget {
   path: number[];
   elementId: string | null;
   rotation: number;
+  /** SVG-internal shapes move through their transform, HTML through geometry. */
+  mode: 'html' | 'svg';
+  /** Authored transform captured at gesture start; empty for HTML targets. */
+  authoredTransform: string;
+}
+
+interface HoverTarget {
+  /** Raw child-index path from the slide. */
+  path: number[];
+  /** Frame-space rect, slide offset already applied. */
+  rect: Rect;
+  label: string;
+  draggable: boolean;
 }
 
 interface DragSession extends GestureBase {
@@ -309,6 +346,45 @@ function errorMessage(cause: unknown): string {
 function eventElement(target: EventTarget | null): Element | null {
   const node = target as Node | null;
   return node && node.nodeType === 1 ? (node as Element) : null;
+}
+
+/** The container path a slide-level double-click enters, or null. */
+function slideEntryPath(slide: Element, target: Element): number[] | null {
+  const component = resolveComponent(slide, target);
+  if (!component || !isEnterableContainer(component)) return null;
+  return componentPath(slide, component);
+}
+
+function resolveTextTargetAt(
+  frameDocument: Document | null | undefined,
+  slideInfo: SlideInfo | undefined,
+  path: readonly number[]
+): TextTargetResult | null {
+  if (!frameDocument || !slideInfo) return null;
+  const slide = frameSlideElement(slideInfo, frameDocument);
+  if (!slide) return null;
+  return resolveSelectedTextTarget(slide, path);
+}
+
+/**
+ * Whole-leaf commands wrap the contents in a styled span, so anchoring the
+ * toolbar state on the leaf element itself would report the old, outer style.
+ * Start the probe inside the first child instead, which is where the applied
+ * style actually lands.
+ */
+function selectionRangeFor(
+  frameDocument: Document,
+  leaf: HTMLElement
+): Range {
+  const range = frameDocument.createRange();
+  const first = leaf.firstChild;
+  if (first) {
+    range.setStart(first, 0);
+    range.setEnd(leaf, leaf.childNodes.length);
+  } else {
+    range.selectNodeContents(leaf);
+  }
+  return range;
 }
 
 function isEditableTarget(element: Element | null): boolean {
@@ -381,53 +457,6 @@ function selectionElements(
     elements.push(element);
   }
   return elements;
-}
-
-/**
- * A locked, hidden, or group ancestor along a selection path owns that
- * subtree, so an Alt-drilled child inside one must stay inert. Nested authored
- * guards count: checking only `path[0]` would miss a group, lock, or hidden
- * wrapper deeper inside an unlocked top-level object. The target itself is
- * judged by each caller, whose rules differ (a group rotates but does not
- * resize).
- */
-function blockedPathAncestor(
-  slide: Element,
-  path: readonly number[]
-): Element | null {
-  for (let depth = 1; depth < path.length; depth += 1) {
-    const element = elementAtPath(slide, path.slice(0, depth));
-    if (!element) return null;
-    if (
-      isLockedElement(element) ||
-      isHiddenElement(element) ||
-      isGroupElement(element)
-    ) {
-      return element;
-    }
-  }
-  return null;
-}
-
-/**
- * The nearest guarded element on the path, including the target. Callers that
- * mutate a whole subtree — appearance, table structure, chart data — must
- * reject a guarded target as well as a guarded ancestor.
- */
-function guardedPathElement(
-  slide: Element,
-  path: readonly number[]
-): Element | null {
-  const target = elementAtPath(slide, path);
-  if (!target) return null;
-  if (
-    isLockedElement(target) ||
-    isHiddenElement(target) ||
-    isGroupElement(target)
-  ) {
-    return target;
-  }
-  return blockedPathAncestor(slide, path);
 }
 
 /**
@@ -539,24 +568,39 @@ export function App() {
   /**
    * Measures a pasted copy in the rendered preview. The master document is
    * inert, so class-supplied positioning and coordinates only resolve here.
-   * The staging clone is removed in the same synchronous task.
+   * A nested paste is staged inside its live destination parent, because an
+   * offset parent's padding box is the containing block. The staging clone is
+   * removed in the same synchronous task.
    */
   const measurePastedObject = useCallback(
-    (element: Element): PastedObjectGeometry | null => {
+    (element: Element, parentPath?: readonly number[]): PastedObjectGeometry | null => {
       const frameDocument = frame.current?.contentDocument;
       if (!frameDocument) return null;
       const liveSlide: Element | null =
         frameDocument.querySelector(`[${FRAME_SLIDE_ATTRIBUTE}]`) ??
         frameDocument.body;
       if (!liveSlide) return null;
+      const liveParent =
+        parentPath && parentPath.length > 0
+          ? elementAtPath(liveSlide, parentPath) ?? liveSlide
+          : liveSlide;
       const clone = liveSlide.ownerDocument.importNode(element, true) as Element;
-      liveSlide.appendChild(clone);
+      liveParent.appendChild(clone);
       try {
         const view = liveSlide.ownerDocument.defaultView;
         const position = view?.getComputedStyle(clone).position ?? '';
         const rect = rectOf(clone, liveSlide);
         const block = containingBlockOffset(clone, liveSlide);
-        return { x: rect.x - block.x, y: rect.y - block.y, position };
+        // Stylesheet transforms only resolve in the live preview; the master
+        // copy cannot see them, so the paste needs this bridge to stay inert.
+        const cssTransformOwned =
+          isSvgInternal(clone) && svgCssTransformOverride(clone);
+        return {
+          x: rect.x - block.x,
+          y: rect.y - block.y,
+          position,
+          cssTransformOwned
+        };
       } finally {
         clone.remove();
       }
@@ -651,7 +695,28 @@ export function App() {
   const [selectionGeometry, setSelectionGeometry] =
     useState<GeometryValues | null>(null);
   const [guides, setGuides] = useState<Guide[]>([]);
+  const [hoverTarget, setHoverTarget] = useState<HoverTarget | null>(null);
+  // The hover resolver runs per pointer sample; the key skips state updates
+  // while the same path stays under the pointer.
+  const hoverKeyRef = useRef('');
+  const hoverFrameRef = useRef<number | null>(null);
+  const hoverPointRef = useRef<Point | null>(null);
+  // Read at sample time, not at enqueue time: an Alt press between a queued
+  // pointer sample and its frame must not be overwritten by the older sample.
+  const hoverAltRef = useRef(false);
+  // Re-resolves the last pointer sample when Alt changes, because Alt changes
+  // the click granularity (deepest node) without moving the pointer.
+  const hoverResampleRef = useRef<((altKey: boolean) => void) | null>(null);
   const [frameEpoch, setFrameEpoch] = useState(0);
+  const [measuredBox, setMeasuredBox] = useState<MeasuredBox | null>(null);
+  const measuredBoxRef = useRef<MeasuredBox | null>(null);
+  measuredBoxRef.current = measuredBox;
+  // The stage frames the measured slide box once the preview has loaded; the
+  // slide metadata is the fallback until then and for decks that declare it.
+  const stageBox = activeSlide
+    ? stageBoxFor(activeSlide, measuredBox)
+    : null;
+  const stageCrop = stageBox ? canvasCrop(stageBox, scale) : null;
   const [slideOpError, setSlideOpError] = useState('');
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
   const [mode, setMode] = useState<'unknown' | 'host' | 'standalone'>(
@@ -755,6 +820,17 @@ export function App() {
     state: TextToolbarState;
     error: string;
   } | null>(null);
+  const [selectionToolbar, setSelectionToolbar] = useState<{
+    state: TextToolbarState;
+    error: string;
+    path: number[];
+  } | null>(null);
+  const selectionToolbarRef = useRef<typeof selectionToolbar>(null);
+  selectionToolbarRef.current = selectionToolbar;
+  const selectionBusyRef = useRef(false);
+  const textShortcutRef = useRef<(action: TextShortcutAction) => void>(
+    () => undefined
+  );
   const [chartEditor, setChartEditor] = useState<{
     json: string;
     error: string;
@@ -795,6 +871,12 @@ export function App() {
         window.clearTimeout(toolbarFocusTimerRef.current);
         toolbarFocusTimerRef.current = null;
       }
+      // A queued hover sample belongs to the frame being torn down.
+      if (hoverFrameRef.current !== null) {
+        window.cancelAnimationFrame(hoverFrameRef.current);
+        hoverFrameRef.current = null;
+      }
+      hoverResampleRef.current = null;
     },
     []
   );
@@ -882,11 +964,33 @@ export function App() {
     []
   );
 
+  /**
+   * Drops the hover preview and the editor-only cursor attribute. A queued
+   * sample is cancelled so a pointer that already left cannot resurrect the box
+   * after a gesture or a frame reload.
+   */
+  const clearHover = useCallback(() => {
+    if (hoverFrameRef.current !== null) {
+      window.cancelAnimationFrame(hoverFrameRef.current);
+      hoverFrameRef.current = null;
+    }
+    hoverKeyRef.current = '';
+    hoverPointRef.current = null;
+    setHoverTarget(null);
+    // A rebinding iframe briefly exposes an empty document whose
+    // documentElement is still null.
+    const frameDocument = frame.current?.contentDocument;
+    if (frameDocument?.documentElement) {
+      frameDocument.documentElement.removeAttribute(HOVER_ATTRIBUTE);
+    }
+  }, []);
+
   const clearOverlay = useCallback(() => {
+    clearHover();
     setSelectionBoxes([]);
     setSelectionGeometry(null);
     setGuides([]);
-  }, []);
+  }, [clearHover]);
 
   /**
    * Moves the drill-in context and drops the selection, which belonged to the
@@ -1154,6 +1258,11 @@ export function App() {
       if (!slide) return false;
       const element = elementAtPath(slide, selected.path);
       if (!element) return false;
+      // SVG shapes position through their transform and a table cell through
+      // its row and column layout; numeric x/y/width/height would be ignored
+      // by an SVG shape or pull the cell out of its table. The fields are
+      // disabled today, so this is a defensive guard.
+      if (isSvgInternal(element) || isTableInternal(element)) return false;
       if (isLockedElement(element) || isHiddenElement(element)) return false;
       if (isGroupElement(element) && (field === 'width' || field === 'height')) {
         return false;
@@ -1177,7 +1286,7 @@ export function App() {
               : null;
             if (element) {
               try {
-                refreshChart(element);
+                refreshOwnedCharts(element);
               } catch {
                 // Invalid authored chart JSON does not block geometry edits.
               }
@@ -1486,9 +1595,10 @@ export function App() {
       return;
     }
     const element = elementAtPath(slideInfo.element, selection.path);
-    if (!chartFigure(element)) return;
+    const figure = chartFigure(element);
+    if (!figure) return;
     try {
-      setChartEditor({ json: chartJson(element as Element), error: '' });
+      setChartEditor({ json: chartJson(figure), error: '' });
     } catch (error) {
       setSlideOpError(error instanceof Error ? error.message : String(error));
     }
@@ -1514,17 +1624,24 @@ export function App() {
     if (!top || guardedPathElement(slideInfo.element, selection.path)) {
       return;
     }
+    // The apply regenerates the figure's innerHTML, so a selection of the svg,
+    // its caption, or a shape inside it stops identifying the same node. Keep
+    // the owning figure so the selection survives the mutation.
+    const figure = chartFigure(elementAtPath(slideInfo.element, selection.path));
+    const figurePath = figure ? componentPath(slideInfo.element, figure) : null;
+    const figureId = figure?.getAttribute('data-ppt-el')?.trim() || null;
     let failure = '';
     const applied = applyInspectorEdit(
       current.master,
       (draft) => {
         const target = findSlide(draft, slideInfo.id);
         const element = elementAtPath(target.element, selection.path);
-        if (!element || !chartFigure(element)) {
+        const figure = chartFigure(element);
+        if (!figure) {
           failure = t('app.chartNotSelected');
           return false;
         }
-        const result = withChartData(element, editor.json);
+        const result = withChartData(figure, editor.json);
         if (!result.ok) {
           failure = result.error;
           return false;
@@ -1539,6 +1656,17 @@ export function App() {
         error: failure || t('app.chartApplyFailed')
       });
       return;
+    }
+    if (figurePath !== null) {
+      actionsRef.current.selectTargets([
+        {
+          slideIndex: current.activeIndex,
+          path: figurePath,
+          elementId: figureId
+        }
+      ]);
+    } else {
+      actionsRef.current.clearSelection();
     }
     setChartEditor(null);
   }, [chartEditor, commitMasterDocument, t]);
@@ -1866,9 +1994,10 @@ export function App() {
     const current = stateRef.current;
     const slide = current.slides[current.activeIndex];
     if (!slide) return;
+    const box = stageBoxFor(slide, measuredBoxRef.current);
     const bounds = canvas.current.getBoundingClientRect();
-    const widthScale = Math.max(0.1, (bounds.width - 96) / slide.width);
-    const heightScale = Math.max(0.1, (bounds.height - 96) / slide.height);
+    const widthScale = Math.max(0.1, (bounds.width - 96) / box.width);
+    const heightScale = Math.max(0.1, (bounds.height - 96) / box.height);
     actionsRef.current.setScale(Math.min(widthScale, heightScale, 1));
   }, []);
 
@@ -1894,14 +2023,15 @@ export function App() {
   }, [view, playing]);
 
   useEffect(() => {
-    // Fit only when the slide identity or the canvas size changes. Depending
-    // on the SlideInfo object would refit after every commit, because commits
-    // re-detect the slide list and a user zoom would be lost.
+    // Fit only when the slide identity, its measured box, or the canvas size
+    // changes. Depending on the SlideInfo object would refit after every
+    // commit, because commits re-detect the slide list and a user zoom would
+    // be lost.
     computeFitScale();
   }, [
     activeSlide?.id,
-    activeSlide?.width,
-    activeSlide?.height,
+    stageBox?.width,
+    stageBox?.height,
     canvasSize.width,
     canvasSize.height,
     computeFitScale,
@@ -1952,6 +2082,62 @@ export function App() {
     }
   }, []);
 
+  const applySelectionTextCommand = useCallback(
+    async (command: TextCommand) => {
+      if (selectionBusyRef.current) return;
+      if (!actionsRef.current.settlePendingEdits()) return;
+      const current = stateRef.current;
+      if (current.selections.length !== 1 || !current.selection) return;
+      const frameDocument = frame.current?.contentDocument;
+      if (!frameDocument) return;
+      const resolved = resolveTextTargetAt(
+        frameDocument,
+        current.slides[current.activeIndex],
+        current.selection.path
+      );
+      if (!resolved || resolved.status !== 'editable') {
+        setSelectionToolbar(null);
+        return;
+      }
+      try {
+        frameDocument.getSelection()?.removeAllRanges();
+        applyTextCommand(frameDocument, resolved.leaf, command, null);
+        selectionBusyRef.current = true;
+        const saved = await commitFrame();
+        if (saved) {
+          setSelectionToolbar((previous) =>
+            previous ? { ...previous, error: '' } : previous
+          );
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        setSelectionToolbar((previous) =>
+          previous ? { ...previous, error: message } : previous
+        );
+      } finally {
+        selectionBusyRef.current = false;
+      }
+    },
+    [commitFrame]
+  );
+
+  const applySelectionTextLink = useCallback(() => {
+    const current = selectionToolbarRef.current;
+    if (!current) return;
+    toolbarInteractionRef.current = true;
+    let value: string | null = null;
+    try {
+      value = window.prompt(
+        t('app.linkPromptDetail'),
+        current.state.link || 'https://'
+      );
+    } finally {
+      toolbarInteractionRef.current = false;
+    }
+    if (value === null) return;
+    void applySelectionTextCommand({ type: 'link', value });
+  }, [applySelectionTextCommand, t]);
+
   const changeView = useCallback(
     (next: EditorView) => {
       if (next === view || !actionsRef.current.settlePendingEdits()) return;
@@ -1965,6 +2151,9 @@ export function App() {
   );
 
   const refreshOverlay = useCallback(() => {
+    // The stored hover rect is a snapshot; a selection, zoom, or reload makes
+    // it stale, so the next pointer sample re-measures instead.
+    clearHover();
     const current = stateRef.current;
     if (current.selections.length === 0) {
       clearOverlay();
@@ -2004,11 +2193,32 @@ export function App() {
     }
     setSelectionBoxes(boxes);
     setSelectionGeometry(geometry);
-  }, [clearOverlay]);
+  }, [clearHover, clearOverlay]);
 
   useEffect(() => {
     refreshOverlay();
   }, [refreshOverlay, selections, activeIndex, srcDoc, slides, frameEpoch]);
+
+  // A zoom rescales the frame under a stationary pointer, so the stored hover
+  // rect would paint at the old scale until the next pointer sample.
+  useEffect(() => {
+    clearHover();
+  }, [clearHover, scale]);
+
+  // The editor chrome usually owns keyboard focus, so the frame document never
+  // sees Alt. Re-resolve the last hover sample from the parent document too.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Alt') return;
+      hoverResampleRef.current?.(event.altKey);
+    };
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('keyup', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('keyup', onKey);
+    };
+  }, []);
 
   /**
    * Reloads the preview iframe from the current master document, discarding
@@ -2055,11 +2265,15 @@ export function App() {
       session.moved = true;
       if (session.kind === 'drag') {
         // Detect before the first write: this is the inline position the pin
-        // is about to replace.
-        session.pinned = willAnyPinToAbsolute(
-          session.targets.map((target) => target.element)
+        // is about to replace. SVG-internal shapes keep their transform, so
+        // only HTML targets take part in the pin.
+        const htmlTargets = session.targets.filter(
+          (target) => target.mode === 'html'
         );
-        session.targets.forEach((target) =>
+        session.pinned = willAnyPinToAbsolute(
+          htmlTargets.map((target) => target.element)
+        );
+        htmlTargets.forEach((target) =>
           pinToAbsolute(target.element, target.start, session.slide)
         );
       } else {
@@ -2097,7 +2311,11 @@ export function App() {
       let dy = point.y - session.start.y;
       let nextGuides: Guide[] = [];
       const primary = session.targets[0];
-      if (!noSnap && primary) {
+      // Snap guides are authored in slide space; an SVG shape moves in its own
+      // user space, so a mixed or SVG-only drag stays unsnapped.
+      const allowSnap =
+        !noSnap && session.targets.every((target) => target.mode === 'html');
+      if (allowSnap && primary) {
         const moved: Rect = {
           ...primary.start,
           x: primary.start.x + dx,
@@ -2116,7 +2334,16 @@ export function App() {
       const rects = moveTargets(session.targets, { x: dx, y: dy });
       rects.forEach((rect, index) => {
         const target = session.targets[index];
-        if (target) applyRect(target.element, rect, session.slide);
+        if (!target) return;
+        if (target.mode === 'svg') {
+          applySvgTranslate(
+            target.element,
+            target.authoredTransform,
+            svgUserDelta(target.element, { x: dx, y: dy })
+          );
+        } else {
+          applyRect(target.element, rect, session.slide);
+        }
       });
       setSelectionBoxes(
         session.targets.map((target, index) => ({
@@ -2197,7 +2424,7 @@ export function App() {
       refreshOverlay();
       return;
     }
-    if (session.kind === 'resize') refreshCharts(session.slide);
+    if (session.kind === 'resize') refreshOwnedCharts(session.target.element);
     void commitFrame().then((committed) => {
       if (committed) showPinNotice(session.pinned);
     });
@@ -2266,6 +2493,7 @@ export function App() {
       const current = stateRef.current;
       const slideInfo = current.slides[current.activeIndex];
       if (!slideInfo || items.length === 0) return;
+      clearHover();
       sessionRef.current = {
         kind: 'drag',
         pointerId,
@@ -2275,13 +2503,20 @@ export function App() {
         pinned: false,
         slide,
         slideOffset: slideOffsetOf(slide),
-        targets: items.map((item) => ({
-          element: item.element,
-          start: rectOf(item.element, slide),
-          rotation: rotationOf(item.element),
-          path: item.selection.path,
-          elementId: item.selection.elementId
-        })),
+        targets: items.map((item) => {
+          const svg = isSvgInternal(item.element);
+          return {
+            element: item.element,
+            start: rectOf(item.element, slide),
+            rotation: rotationOf(item.element),
+            path: item.selection.path,
+            elementId: item.selection.elementId,
+            mode: svg ? 'svg' : 'html',
+            authoredTransform: svg
+              ? item.element.getAttribute('transform') ?? ''
+              : ''
+          };
+        }),
         siblingRects: siblingRectsOf(
           slide,
           items.map((item) => item.element)
@@ -2290,7 +2525,7 @@ export function App() {
       };
       attachSession(slide);
     },
-    [attachSession]
+    [attachSession, clearHover]
   );
 
   const beginResizeSession = useCallback(
@@ -2311,6 +2546,10 @@ export function App() {
       const element = elementAtPath(slide, selected.path);
       if (
         !element ||
+        // SVG shapes and table cells expose no handles; absolute geometry
+        // would be ignored by their renderers. Defensive, not reachable today.
+        isSvgInternal(element) ||
+        isTableInternal(element) ||
         isLockedElement(element) ||
         isGroupElement(element) ||
         blockedPathAncestor(slide, selected.path) !== null
@@ -2319,6 +2558,7 @@ export function App() {
       }
       event.preventDefault();
       event.stopPropagation();
+      clearHover();
       // Keep overlay gestures in the editor document; without capture a drag
       // that crosses the iframe boundary gets routed into the iframe.
       event.currentTarget.setPointerCapture(event.pointerId);
@@ -2340,7 +2580,7 @@ export function App() {
       };
       attachSession(slide);
     },
-    [attachSession, frameSlideNow, outerDesignPoint]
+    [attachSession, clearHover, frameSlideNow, outerDesignPoint]
   );
 
   const beginRotateSession = useCallback(
@@ -2359,6 +2599,10 @@ export function App() {
       const element = elementAtPath(slide, selected.path);
       if (
         !element ||
+        // SVG shapes and table cells expose no rotate handle; absolute
+        // geometry would be ignored by their renderers. Defensive only.
+        isSvgInternal(element) ||
+        isTableInternal(element) ||
         isLockedElement(element) ||
         isHiddenElement(element) ||
         blockedPathAncestor(slide, selected.path) !== null
@@ -2367,6 +2611,7 @@ export function App() {
       }
       event.preventDefault();
       event.stopPropagation();
+      clearHover();
       event.currentTarget.setPointerCapture(event.pointerId);
       const startRect = rectOf(element, slide);
       const center = centerOf(startRect);
@@ -2392,7 +2637,7 @@ export function App() {
       };
       attachSession(slide);
     },
-    [attachSession, frameSlideNow, outerDesignPoint]
+    [attachSession, clearHover, frameSlideNow, outerDesignPoint]
   );
 
   const nudgeSelection = useCallback(
@@ -2410,9 +2655,15 @@ export function App() {
       const boxes: SelectionBox[] = [];
       let changed = false;
       let pinned = false;
+      let tableCells = 0;
+      let others = 0;
       for (const target of targets) {
         const element = elementAtPath(slide, target.path);
         if (!element) continue;
+        // A clamped, CSS-owned, locked, hidden, or blocked target can all be
+        // the reason a gesture moves nothing, so count every resolved non-cell
+        // target before the guards below.
+        if (!isTableInternal(element)) others += 1;
         const rect = rectOf(element, slide);
         const blockedAncestor = blockedPathAncestor(slide, target.path);
         if (
@@ -2430,6 +2681,33 @@ export function App() {
           }
           continue;
         }
+        if (isTableInternal(element)) {
+          // Absolute positioning would pull the cell out of the table layout
+          // and corrupt its row and column, so a nudge must never write it.
+          // Keep the cell in the overlay and count it so a gesture that moved
+          // nothing can explain the refusal.
+          tableCells += 1;
+          boxes.push({
+            rect: frameRectOf(rect, offset),
+            rotation: rotationOf(element),
+            path: target.path,
+            elementId: target.elementId
+          });
+          continue;
+        }
+        const svg = isSvgInternal(element);
+        // A CSS transform owns the shape's rendering; nudging the attribute
+        // would be inert.
+        const cssOwned = svg && svgCssTransformOverride(element);
+        if (cssOwned) {
+          boxes.push({
+            rect: frameRectOf(rect, offset),
+            rotation: rotationOf(element),
+            path: target.path,
+            elementId: target.elementId
+          });
+          continue;
+        }
         const next = nudge(
           rect,
           dx,
@@ -2445,8 +2723,18 @@ export function App() {
           });
           continue;
         }
-        if (willPinToAbsolute(element)) pinned = true;
-        pinToAbsolute(element, next, slide);
+        if (svg) {
+          // Repeated presses append translates, the same convention as
+          // repeated drag gestures.
+          applySvgTranslate(
+            element,
+            element.getAttribute('transform') ?? '',
+            svgUserDelta(element, { x: next.x - rect.x, y: next.y - rect.y })
+          );
+        } else {
+          if (willPinToAbsolute(element)) pinned = true;
+          pinToAbsolute(element, next, slide);
+        }
         changed = true;
         boxes.push({
           rect: frameRectOf(next, offset),
@@ -2455,7 +2743,12 @@ export function App() {
           elementId: target.elementId
         });
       }
-      if (!changed) return false;
+      if (!changed) {
+        // Only an all-cell selection explains itself; any other selected
+        // target can be the blocker.
+        if (tableCells > 0 && others === 0) showEditHint('table-cell');
+        return false;
+      }
       setSelectionBoxes(boxes);
       setGuides([]);
       void commitFrame().then((committed) => {
@@ -2463,13 +2756,14 @@ export function App() {
       });
       return true;
     },
-    [commitFrame, frameSlideNow, showPinNotice]
+    [commitFrame, frameSlideNow, showEditHint, showPinNotice]
   );
 
   const beginTextEditing = useCallback((editable: HTMLElement) => {
     // A started text edit is the success path for a previously rejected
     // gesture, so the advisory hint leaves at once.
     setEditHint(null);
+    clearHover();
     const document = editable.ownerDocument;
     const range = currentTextRange(document);
     editingElementRef.current = editable;
@@ -2479,13 +2773,61 @@ export function App() {
       state: readTextToolbarState(document, editable, lastTextRangeRef.current),
       error: ''
     });
-  }, []);
+  }, [clearHover]);
 
   const endTextEditing = useCallback(() => {
     editingElementRef.current = null;
     lastTextRangeRef.current = null;
     setTextToolbar(null);
   }, []);
+
+  useEffect(() => {
+    if (textToolbar) {
+      setSelectionToolbar(null);
+      return;
+    }
+    const current = stateRef.current;
+    if (
+      current.selections.length !== 1 ||
+      !current.selection ||
+      current.selection.slideIndex !== current.activeIndex
+    ) {
+      setSelectionToolbar(null);
+      return;
+    }
+    const frameDocument = frame.current?.contentDocument;
+    const resolved = resolveTextTargetAt(
+      frameDocument,
+      current.slides[current.activeIndex],
+      current.selection.path
+    );
+    if (
+      !frameDocument ||
+      !resolved ||
+      resolved.status !== 'editable' ||
+      resolved.empty
+    ) {
+      setSelectionToolbar(null);
+      return;
+    }
+    setSelectionToolbar({
+      state: readTextToolbarState(
+        frameDocument,
+        resolved.leaf,
+        selectionRangeFor(frameDocument, resolved.leaf)
+      ),
+      error: '',
+      path: current.selection.path
+    });
+  }, [
+    textToolbar,
+    selection,
+    selections,
+    activeIndex,
+    slides,
+    master,
+    frameEpoch
+  ]);
 
   // The notice's Undo delegates to the global undo. A pending edit is settled
   // into its own history entry and then undone by that undo, and an active
@@ -2565,39 +2907,16 @@ export function App() {
     if (current.selections.length !== 1 || !current.selection) return false;
     if (current.selection.slideIndex !== current.activeIndex) return false;
     if (current.selection.path.length < 1) return false;
-    const slideInfo = current.slides[current.activeIndex];
     const frameDocument = frame.current?.contentDocument;
-    if (!slideInfo || !frameDocument) return false;
-    const slide = frameSlideElement(slideInfo, frameDocument);
-    if (!slide) return false;
-    const top = elementAtPath(slide, [current.selection.path[0] ?? -1]);
-    if (
-      !top ||
-      isLockedElement(top) ||
-      isHiddenElement(top) ||
-      isGroupElement(top)
-    ) {
-      return false;
-    }
-    const selected = elementAtPath(slide, current.selection.path);
-    if (!selected) return false;
+    if (!frameDocument) return false;
+    const resolved = resolveTextTargetAt(
+      frameDocument,
+      current.slides[current.activeIndex],
+      current.selection.path
+    );
+    if (!resolved || resolved.status !== 'editable') return false;
 
-    const textElement = selected.matches(TEXT_EDITABLE_SELECTOR)
-      ? selected
-      : selected.querySelector(TEXT_EDITABLE_SELECTOR);
-    const editable = textElement as HTMLElement | null;
-    if (!editable || !isLeafTextElement(editable)) return false;
-    // Empty div shapes and table cells accept a first text entry; other
-    // semantic elements require existing content so Enter cannot inject text.
-    if (
-      !editable.textContent?.trim() &&
-      editable.tagName !== 'DIV' &&
-      editable.tagName !== 'TD' &&
-      editable.tagName !== 'TH'
-    ) {
-      return false;
-    }
-
+    const editable = resolved.leaf;
     textBaselineRef.current.set(editable, editable.innerHTML);
     editable.setAttribute('contenteditable', 'true');
     editable.setAttribute(EDITING_ATTRIBUTE, 'true');
@@ -2699,6 +3018,25 @@ export function App() {
   );
 
   /**
+   * Enters the single selected component when it has object children. Enter
+   * works at any depth, not only for a direct child of the active context.
+   */
+  const enterSelectedComponent = useCallback((): boolean => {
+    const current = stateRef.current;
+    const selected = current.selection;
+    if (!selected || current.selections.length !== 1) return false;
+    if (selected.slideIndex !== current.activeIndex) return false;
+    const slide = frameSlideNow();
+    if (!slide) return false;
+    const element = elementAtPath(slide, selected.path);
+    if (!element || !isEnterableContainer(element)) return false;
+    setContainerPath([...selected.path]);
+    actionsRef.current.clearSelection();
+    clearOverlay();
+    return true;
+  }, [clearOverlay, frameSlideNow]);
+
+  /**
    * Enter and Escape for the drill-in context. The same callback is registered
    * on the parent document and on the preview frame document: a keydown inside
    * the iframe never bubbles to the parent. Capture phase gives the context
@@ -2745,29 +3083,13 @@ export function App() {
       const target = eventElement(event.target);
       if (target?.closest('button, a, [role="button"], [role="tab"]')) return;
 
-      const current = stateRef.current;
-      const selected = current.selection;
-      if (!selected || current.selections.length !== 1) return;
-      if (selected.slideIndex !== current.activeIndex) return;
-      // Only the active context's direct child can be entered; any other
-      // selection falls through to the shortcut layer.
-      if (
-        selected.path.length !== path.length + 1 ||
-        !path.every((index, depth) => selected.path[depth] === index)
-      ) {
-        return;
-      }
-      const slide = frameSlideNow();
-      if (!slide) return;
-      const element = elementAtPath(slide, selected.path);
-      if (!element || !isEnterableContainer(element)) return;
+      // Enter enters the selected component at any depth, not only a direct
+      // child of the active context (D6).
+      if (!enterSelectedComponent()) return;
       event.preventDefault();
       event.stopPropagation();
-      setContainerPath([...selected.path]);
-      actionsRef.current.clearSelection();
-      clearOverlay();
     },
-    [chartEditor, clearOverlay, frameSlideNow, shortcutsOpen]
+    [chartEditor, clearOverlay, enterSelectedComponent, shortcutsOpen]
   );
   contextKeyDownRef.current = handleContextKeyDown;
 
@@ -2855,6 +3177,25 @@ export function App() {
             return;
           default:
             return;
+        }
+      }
+
+      const textShortcut = mapTextShortcut(event);
+      if (textShortcut) {
+        const target = eventElement(event.target);
+        const inForm = target?.closest('input, textarea, select');
+        const foreignEditable =
+          isEditableShortcutTarget(event.target) && !editingElementRef.current;
+        if (
+          !shortcutsOpen &&
+          !chartEditor &&
+          !inForm &&
+          !foreignEditable &&
+          (editingElementRef.current || selectionToolbarRef.current)
+        ) {
+          event.preventDefault();
+          textShortcutRef.current(textShortcut);
+          return;
         }
       }
 
@@ -2952,18 +3293,41 @@ export function App() {
           return;
         case 'paste':
           event.preventDefault();
-          void actionsRef.current.pasteObjects().catch(() => undefined);
+          void actionsRef.current
+            .pasteObjects()
+            .then((outcome) => {
+              if (outcome === 'kind-mismatch') showEditHint('paste-kind');
+              if (outcome === 'table-cell') showEditHint('table-cell');
+            })
+            .catch(() => undefined);
           return;
         case 'duplicate':
           if (current.selections.length === 0) return;
           event.preventDefault();
           void actionsRef.current.duplicateSelection().catch(() => undefined);
           return;
-        case 'delete':
+        case 'delete': {
           if (current.selections.length === 0) return;
+          // A table cell has no removable geometry of its own; rows and
+          // columns belong to the table toolbar. Refuse the whole gesture so
+          // a mixed selection never deletes only its HTML targets.
+          const slide = frameSlideNow();
+          const tableCell =
+            slide !== null &&
+            current.selections.some((target) => {
+              if (target.slideIndex !== current.activeIndex) return false;
+              const element = elementAtPath(slide, target.path);
+              return element !== null && isTableInternal(element);
+            });
+          if (tableCell) {
+            event.preventDefault();
+            showEditHint('table-cell');
+            return;
+          }
           event.preventDefault();
           void actionsRef.current.deleteSelection().catch(() => undefined);
           return;
+        }
         case 'zoom-in':
           event.preventDefault();
           zoomBy(ZOOM_STEP);
@@ -3015,10 +3379,12 @@ export function App() {
       chartEditor,
       clearOverlay,
       computeFitScale,
+      frameSlideNow,
       handleObjectCommand,
       nudgeSelection,
       playing,
       shortcutsOpen,
+      showEditHint,
       startPlay,
       startTextEditing,
       stopPlay,
@@ -3027,6 +3393,41 @@ export function App() {
       t,
       zoomBy
     ]
+  );
+
+  /**
+   * Resolves a slide-level pointer down to the component a click should select.
+   * An entered context keeps its direct-child rule, and Alt keeps the
+   * deepest-node shortcut. Only a plain slide-level click changes granularity:
+   * it targets the innermost visible component instead of the top-level object.
+   */
+  const componentSelection = useCallback(
+    (target: Element, slide: Element, altKey: boolean): SelectionTarget | null => {
+      const current = stateRef.current;
+      const contextPath = containerPathRef.current;
+      if (contextPath.length > 0) {
+        return selectionFromEvent(target, slide, {
+          slideIndex: current.activeIndex,
+          altKey,
+          containerPath: contextPath
+        });
+      }
+      if (altKey) {
+        return selectionFromEvent(target, slide, {
+          slideIndex: current.activeIndex,
+          altKey: true
+        });
+      }
+      const component = resolveComponent(slide, target);
+      const path = component ? componentPath(slide, component) : null;
+      if (!component || !path) return null;
+      return {
+        slideIndex: current.activeIndex,
+        path,
+        elementId: component.getAttribute('data-ppt-el')?.trim() || null
+      };
+    },
+    []
   );
 
   const handleFramePointerDown = useCallback(
@@ -3042,11 +3443,7 @@ export function App() {
       if (isEditableTarget(target)) return;
       if (!actionsRef.current.settlePendingEdits()) return;
 
-      const selected = selectionFromEvent(target, frameSlide, {
-        slideIndex: current.activeIndex,
-        altKey: event.altKey,
-        containerPath
-      });
+      const selected = componentSelection(target, frameSlide, event.altKey);
       if (!selected) {
         // A click inside the entered container keeps the context, including a
         // click on the container's own padding. A click outside it leaves the
@@ -3073,19 +3470,63 @@ export function App() {
         sameSelection(candidate, selected)
       );
       if (!existing) actionsRef.current.select(selected);
-      // A nested path resolves to the child object itself, so a single
+      // A component selection resolves to the child object itself, so a
       // nested selection drags like a top-level one.
-      const clickedTop = elementAtPath(frameSlide, selected.path);
+      const clicked = elementAtPath(frameSlide, selected.path);
+      // A CSS transform owns an SVG shape's rendering, so the presentation
+      // attribute this editor writes would stay inert. The shape remains
+      // selectable, but the gesture cannot move it.
+      const cssOwnedShape =
+        clicked !== null &&
+        isSvgInternal(clicked) &&
+        svgCssTransformOverride(clicked);
       if (
-        !clickedTop ||
-        isLockedElement(clickedTop) ||
-        isHiddenElement(clickedTop) ||
-        blockedPathAncestor(frameSlide, selected.path) !== null
+        !clicked ||
+        isLockedElement(clicked) ||
+        isHiddenElement(clicked) ||
+        blockedPathAncestor(frameSlide, selected.path) !== null ||
+        cssOwnedShape
       ) {
         // Locked objects stay selectable but inert: no native text selection
         // drag, and no editor transform session. The same holds for a child
         // of a locked, hidden, or group top-level wrapper.
-        if (clickedTop) event.preventDefault();
+        if (clicked) event.preventDefault();
+        return;
+      }
+
+      if (isTableInternal(clicked)) {
+        // A table cell stays selectable, but absolute positioning would pull
+        // it out of the table layout and corrupt its row and column, so the
+        // editor must not write it. Explain the refused move once the pointer
+        // travels past the drag threshold, and never start a session or write
+        // a style. The probe does not preventDefault, so native cell text
+        // selection works.
+        const startX = event.clientX;
+        const startY = event.clientY;
+        // The frame reports design/CSS pixels while the session threshold is
+        // defined in outer screen pixels.
+        const threshold = DRAG_THRESHOLD_SCREEN_PX / stateRef.current.scale;
+        const cleanup = () => {
+          frameDocument.removeEventListener('pointermove', onMove);
+          frameDocument.removeEventListener('pointerup', cleanup);
+          frameDocument.removeEventListener('pointercancel', cleanup);
+          window.removeEventListener('pointerup', cleanup);
+          window.removeEventListener('pointercancel', cleanup);
+        };
+        const onMove = (move: PointerEvent) => {
+          const distance = Math.hypot(
+            move.clientX - startX,
+            move.clientY - startY
+          );
+          if (distance < threshold) return;
+          cleanup();
+          showEditHint('table-cell');
+        };
+        frameDocument.addEventListener('pointermove', onMove);
+        frameDocument.addEventListener('pointerup', cleanup);
+        frameDocument.addEventListener('pointercancel', cleanup);
+        window.addEventListener('pointerup', cleanup);
+        window.addEventListener('pointercancel', cleanup);
         return;
       }
 
@@ -3099,9 +3540,14 @@ export function App() {
         .filter(
           (item): item is { element: Element; selection: SelectionTarget } =>
             item.element !== null &&
+            !isTableInternal(item.element) &&
             !isLockedElement(item.element) &&
             !isHiddenElement(item.element) &&
-            blockedPathAncestor(frameSlide, item.selection.path) === null
+            blockedPathAncestor(frameSlide, item.selection.path) === null &&
+            !(
+              isSvgInternal(item.element) &&
+              svgCssTransformOverride(item.element)
+            )
         )
         .sort((a, b) => {
           if (sameSelection(a.selection, selected)) return -1;
@@ -3118,7 +3564,7 @@ export function App() {
         event.altKey
       );
     },
-    [beginDragSession, clearOverlay, containerPath]
+    [beginDragSession, clearOverlay, componentSelection, containerPath, showEditHint]
   );
 
   keyDownRef.current = handleKeyDown;
@@ -3167,7 +3613,24 @@ export function App() {
     const frameDocument = frame.current?.contentDocument;
     if (!frameDocument) return;
 
+    // A reload replaces the frame document (and its listeners). Reset the hover
+    // key before anything else: a stale path would suppress the first sample on
+    // the new document, and a queued frame from the old one must not touch it.
+    clearHover();
+
+    revealPreviewSlide(frameDocument);
     setFrameEpoch((value) => value + 1);
+
+    // The stage crops to the measured box so CSS-sized decks do not show the
+    // metadata fallback as an inner band. The measurement is session-only.
+    const measured = measureSlideBox(frameDocument);
+    const activeId = stateRef.current.slides[stateRef.current.activeIndex]?.id;
+    if (measured && activeId) {
+      const next = { id: activeId, box: measured };
+      setMeasuredBox((previous) =>
+        sameMeasuredBox(previous, next) ? previous : next
+      );
+    }
 
     frameDocument.addEventListener('dblclick', (event) => {
       const target = eventElement(event.target);
@@ -3228,7 +3691,13 @@ export function App() {
         ? frameSlideElement(slideInfo, frameDocument)
         : null;
       if (!frameSlide) return;
-      const next = contextEntry(frameSlide, target, containerPathRef.current);
+      // An entered context enters its direct children; at slide level the same
+      // component resolution as a click decides the container, so a
+      // double-click on a card or an svg enters it without a hotkey.
+      const next =
+        containerPathRef.current.length > 0
+          ? contextEntry(frameSlide, target, containerPathRef.current)
+          : slideEntryPath(frameSlide, target);
       if (!next) {
         // A double-click on the entered container's own padding asks to
         // enter the level the user is already at. Neither "enter the
@@ -3377,10 +3846,123 @@ export function App() {
     frameDocument.addEventListener('pointerdown', (event) => {
       framePointerDownRef.current(event, frameDocument);
     });
+
+    // The cursor style lives in the frame head and the hover attribute on the
+    // frame's <html>: commitSlide serializes the slide subtree only, so neither
+    // can reach the saved deck.
+    frameDocument
+      .querySelectorAll('[data-ppt-editor-style]')
+      .forEach((style) => style.remove());
+    const editorStyle = frameDocument.createElement('style');
+    editorStyle.setAttribute('data-ppt-editor-style', '');
+    editorStyle.textContent =
+      `html[${HOVER_ATTRIBUTE}="move"], html[${HOVER_ATTRIBUTE}="move"] * { cursor: move !important; }` +
+      `html[${HOVER_ATTRIBUTE}="blocked"], html[${HOVER_ATTRIBUTE}="blocked"] * { cursor: default !important; }`;
+    frameDocument.head.appendChild(editorStyle);
+
+    const sampleHover = (point: Point, altKey: boolean) => {
+      const current = stateRef.current;
+      // Text editing and transform gestures own the pointer; no preview.
+      if (sessionRef.current || editingElementRef.current) {
+        clearHover();
+        return;
+      }
+      const slideInfo = current.slides[current.activeIndex];
+      const frameSlide = slideInfo
+        ? frameSlideElement(slideInfo, frameDocument)
+        : null;
+      const target = frameDocument.elementFromPoint(point.x, point.y);
+      if (
+        !slideInfo ||
+        !frameSlide ||
+        !target ||
+        !frameSlide.contains(target)
+      ) {
+        clearHover();
+        return;
+      }
+      // An authored editable accepts the pointer for its own caret, not for a
+      // selection gesture, so it gets neither a preview nor a cursor.
+      if (isEditableTarget(target)) {
+        clearHover();
+        return;
+      }
+      // Alt deepens the click target, so the preview follows the same branch.
+      const resolved = componentSelection(target, frameSlide, altKey);
+      const element = resolved
+        ? elementAtPath(frameSlide, resolved.path)
+        : null;
+      if (
+        !resolved ||
+        !element ||
+        // The outline already marks the selection; a second box would just
+        // double the border.
+        (current.selection &&
+          sameSelection(current.selection, resolved) &&
+          current.selections.length === 1)
+      ) {
+        clearHover();
+        return;
+      }
+      const key = resolved.path.join('.');
+      if (hoverKeyRef.current === key) return;
+      hoverKeyRef.current = key;
+      const draggable =
+        !isTableInternal(element) &&
+        !(isSvgInternal(element) && svgCssTransformOverride(element)) &&
+        !isLockedElement(element) &&
+        blockedPathAncestor(frameSlide, resolved.path) === null;
+      setHoverTarget({
+        path: resolved.path,
+        rect: frameRectOf(
+          rectOf(element, frameSlide),
+          slideOffsetOf(frameSlide)
+        ),
+        label: componentLabel(element),
+        draggable
+      });
+      frameDocument.documentElement.setAttribute(
+        HOVER_ATTRIBUTE,
+        draggable ? 'move' : 'blocked'
+      );
+    };
+
+    const updateHover = (event: PointerEvent) => {
+      hoverPointRef.current = { x: event.clientX, y: event.clientY };
+      hoverAltRef.current = event.altKey;
+      // Coalesce pointer moves into one sample per frame.
+      if (hoverFrameRef.current !== null) return;
+      const point = hoverPointRef.current;
+      hoverFrameRef.current = window.requestAnimationFrame(() => {
+        hoverFrameRef.current = null;
+        sampleHover(point, hoverAltRef.current);
+      });
+    };
+    const resampleForAlt = (event: KeyboardEvent) => {
+      if (event.key !== 'Alt' || !hoverPointRef.current) return;
+      hoverAltRef.current = event.altKey;
+      sampleHover(hoverPointRef.current, event.altKey);
+    };
+    hoverResampleRef.current = (altKey) => {
+      if (!hoverPointRef.current) return;
+      hoverAltRef.current = altKey;
+      sampleHover(hoverPointRef.current, altKey);
+    };
+    frameDocument.addEventListener('pointermove', updateHover);
+    frameDocument.addEventListener('pointerleave', clearHover);
+    frameDocument.addEventListener('keydown', resampleForAlt);
+    frameDocument.addEventListener('keyup', resampleForAlt);
+    // Leaving an iframe across the boundary reports no related target instead
+    // of a sibling element; either signal must drop the preview.
+    frameDocument.addEventListener('pointerout', (event) => {
+      if (!event.relatedTarget) clearHover();
+    });
   }, [
     beginTextEditing,
+    clearHover,
     clearOverlay,
     commit,
+    componentSelection,
     endTextEditing,
     finishTextEditing,
     showEditHint
@@ -3483,6 +4065,19 @@ export function App() {
       editable.focus();
     }
   }, [endTextEditing, t]);
+
+  const applyTextShortcut = useCallback(
+    (action: TextShortcutAction) => {
+      const command: TextCommand = { type: action.type };
+      if (editingElementRef.current) {
+        applyTextToolbarCommand(command);
+        return;
+      }
+      void applySelectionTextCommand(command);
+    },
+    [applySelectionTextCommand, applyTextToolbarCommand]
+  );
+  textShortcutRef.current = applyTextShortcut;
 
   const runInsertion = useCallback(async (request: InsertRequest) => {
     if (!actionsRef.current.settlePendingEdits()) return;
@@ -3686,29 +4281,34 @@ export function App() {
     activeSlide && selection
       ? tableContext(activeSlide.element, selection.path)
       : null;
-  const tableState = tableSelection
-    ? {
-        row: tableSelection.row,
-        column: tableSelection.column,
-        rows: tableSelection.rows,
-        columns: tableSelection.columns,
-        header: tableSelection.header,
-        fill:
-          tableSelection.cell.style.background ||
-          tableSelection.cell.style.backgroundColor,
-        border:
-          tableSelection.cell.style.borderTopColor ||
-          tableSelection.cell.style.borderColor
-      }
-    : null;
+  const tableState =
+    tableSelection && selections.length === 1
+      ? {
+          row: tableSelection.row,
+          column: tableSelection.column,
+          rows: tableSelection.rows,
+          columns: tableSelection.columns,
+          header: tableSelection.header,
+          fill:
+            tableSelection.cell.style.background ||
+            tableSelection.cell.style.backgroundColor,
+          border:
+            tableSelection.cell.style.borderTopColor ||
+            tableSelection.cell.style.borderColor
+        }
+      : null;
   const primaryObject =
     activeSlide && selection
       ? elementAtPath(activeSlide.element, selection.path)
       : null;
   const chartState: InspectorChartState | null = (() => {
-    if (!chartFigure(primaryObject)) return null;
+    // A multi-selection has no single chart contract; the primary target must
+    // not keep offering a data editor for the rest of the selection.
+    if (selections.length !== 1) return null;
+    const figure = chartFigure(primaryObject);
+    if (!figure) return null;
     try {
-      const data = chartDataOf(primaryObject as Element);
+      const data = chartDataOf(figure);
       return { type: data.type, title: data.title ?? '' };
     } catch {
       return { type: 'invalid', title: t('app.invalidData') };
@@ -3720,13 +4320,56 @@ export function App() {
       : null;
   const blockedByAncestor =
     selection !== null && selection.path.length > 1 && blockedAncestor !== null;
+  // SVG shapes and table cells move through their own mechanisms; overlay
+  // resize/rotate handles and numeric geometry would write the wrong contract.
+  const svgInternal = primaryObject ? isSvgInternal(primaryObject) : false;
+  const tableInternal = primaryObject ? isTableInternal(primaryObject) : false;
   const overlayHandles =
     blockedAncestor !== null ||
+    svgInternal ||
+    tableInternal ||
     (primaryObject && isLockedElement(primaryObject))
       ? 'none'
       : primaryObject && isGroupElement(primaryObject)
         ? 'rotate'
         : 'all';
+
+  const inspectorTextAction = useMemo<InspectorTextAction>(() => {
+    if (state.selections.length > 1) {
+      return { status: 'multi', canEdit: false, canFormat: false };
+    }
+    if (
+      state.selections.length !== 1 ||
+      !state.selection ||
+      state.selection.slideIndex !== state.activeIndex
+    ) {
+      return { status: 'idle', canEdit: false, canFormat: false };
+    }
+    const resolved = resolveTextTargetAt(
+      frame.current?.contentDocument,
+      state.slides[state.activeIndex],
+      state.selection.path
+    );
+    if (!resolved) return { status: 'idle', canEdit: false, canFormat: false };
+    if (resolved.status === 'blocked') {
+      return {
+        status: 'blocked',
+        canEdit: false,
+        canFormat: false,
+        reason: resolved.reason
+      };
+    }
+    const fullText =
+      resolved.leaf.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+    const text =
+      fullText.length > 40 ? `${fullText.slice(0, 40)}…` : fullText;
+    return {
+      status: 'editable',
+      canEdit: true,
+      canFormat: !resolved.empty,
+      text
+    };
+  }, [state, frameEpoch]);
 
   if (mode === 'standalone' && !master) {
     return (
@@ -3830,15 +4473,6 @@ export function App() {
           error={textToolbar.error || undefined}
           onCommand={applyTextToolbarCommand}
           onLink={applyTextLink}
-        />
-      )}
-
-      {tableState && (
-        <TableToolbar
-          state={tableState}
-          disabled={objectActions.locked || objectActions.hidden}
-          onAction={handleTableAction}
-          onCellStyle={handleTableCellStyle}
         />
       )}
 
@@ -4032,40 +4666,98 @@ export function App() {
             }}
             className="relative flex min-w-0 flex-1 items-center justify-center overflow-hidden bg-canvas p-12"
           >
-            {activeSlide ? (
+            {selectionToolbar && !textToolbar && (
+              // A selected table cell shows both bars; the text bar moves
+              // below the table bar instead of painting under it.
               <div
+                className={`pointer-events-none absolute inset-x-0 z-30 flex justify-center ${
+                  tableState ? 'top-16' : 'top-2'
+                }`}
+              >
+                <div className="pointer-events-auto overflow-hidden rounded-md border border-line-strong shadow-[0_16px_40px_var(--editor-shadow-panel)]">
+                  <TextToolbar
+                    mode="selection"
+                    state={selectionToolbar.state}
+                    error={selectionToolbar.error || undefined}
+                    onCommand={(command) =>
+                      void applySelectionTextCommand(command)
+                    }
+                    onLink={applySelectionTextLink}
+                  />
+                </div>
+              </div>
+            )}
+            {/* The table toolbar floats over the canvas instead of taking
+                flow space: selecting a cell must not move the stage between
+                the two clicks of the double-click that starts text editing. */}
+            {tableState && (
+              <div className="absolute inset-x-0 top-0 z-30">
+                <TableToolbar
+                  state={tableState}
+                  disabled={objectActions.locked || objectActions.hidden}
+                  onAction={handleTableAction}
+                  onCellStyle={handleTableCellStyle}
+                />
+              </div>
+            )}
+            {activeSlide && stageCrop ? (
+              <div
+                data-testid="canvas-stage"
                 className="relative shadow-[0_24px_80px_var(--editor-shadow-stage)]"
                 style={{
-                  width: activeSlide.width * scale,
-                  height: activeSlide.height * scale
+                  width: stageCrop.width,
+                  height: stageCrop.height
                 }}
               >
-                <iframe
-                  key={state.documentEpoch}
-                  ref={frame}
-                  title={t('rail.preview')}
-                  sandbox="allow-same-origin"
-                  srcDoc={srcDoc}
-                  onLoad={onFrameLoad}
-                  className="absolute left-0 top-0 border-0 bg-white"
+                {/* Only the frame is clipped: handles that reach past the
+                    slide edge (the rotate handle sits above it) must stay
+                    clickable. */}
+                <div className="absolute inset-0 overflow-hidden">
+                  <iframe
+                    key={state.documentEpoch}
+                    ref={frame}
+                    title={t('rail.preview')}
+                    sandbox="allow-same-origin"
+                    srcDoc={srcDoc}
+                    onLoad={onFrameLoad}
+                    className="absolute left-0 top-0 border-0 bg-white"
+                    style={{
+                      width: activeSlide.width,
+                      height: activeSlide.height,
+                      transform: `translate(${stageCrop.translateX}px, ${stageCrop.translateY}px) scale(${scale})`,
+                      transformOrigin: 'top left'
+                    }}
+                  />
+                </div>
+                {/* Selection boxes and guides are measured in iframe
+                    coordinates (slide-relative plus the slide offset), so the
+                    overlay anchors to the frame origin, not the crop origin. */}
+                <div
+                  className="pointer-events-none absolute z-10"
                   style={{
-                    width: activeSlide.width,
-                    height: activeSlide.height,
-                    transform: `scale(${scale})`,
-                    transformOrigin: 'top left'
+                    left: stageCrop.translateX,
+                    top: stageCrop.translateY,
+                    width: activeSlide.width * scale,
+                    height: activeSlide.height * scale
                   }}
-                />
-                <CanvasOverlay
-                  boxes={selectionBoxes}
-                  guides={guides}
-                  scale={scale}
-                  readOnly={
-                    selectionBoxes.length > 1 || blockedAncestor !== null
-                  }
-                  handles={overlayHandles}
-                  onResizeStart={beginResizeSession}
-                  onRotateStart={beginRotateSession}
-                />
+                >
+                  <CanvasOverlay
+                    boxes={selectionBoxes}
+                    guides={guides}
+                    hover={
+                      hoverTarget
+                        ? { rect: hoverTarget.rect, label: hoverTarget.label }
+                        : null
+                    }
+                    scale={scale}
+                    readOnly={
+                      selectionBoxes.length > 1 || blockedAncestor !== null
+                    }
+                    handles={overlayHandles}
+                    onResizeStart={beginResizeSession}
+                    onRotateStart={beginRotateSession}
+                  />
+                </div>
                 {transitionPreview && (
                   <div
                     key={transitionPreview.id}
@@ -4179,7 +4871,11 @@ export function App() {
             slide={activeSlide}
             selection={selection}
             selectionCount={selections.length}
+            nestedSelectionCount={
+              selections.filter((target) => target.path.length > 1).length
+            }
             blockedByAncestor={blockedByAncestor}
+            geometryUnavailable={svgInternal || tableInternal}
             contextPath={containerPath}
             onEnterContext={changeContext}
             geometry={selectionGeometry}
@@ -4208,6 +4904,10 @@ export function App() {
             onSetBackground={handleBackgroundChange}
             onClearBackground={handleClearBackground}
             onSetNotes={handleNotesChange}
+            textAction={inspectorTextAction}
+            onEditText={() => {
+              void startTextEditing();
+            }}
           />
         </div>
       )}

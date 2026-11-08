@@ -86,6 +86,10 @@ Rules:
   (`invalid-canvas-size`).
 - Slides with different canvas sizes produce the `mixed-canvas-sizes` warning.
   Keep one canvas size per deck. PDF export uses the first slide's size.
+- The editor canvas, thumbnail rail, and sorter crop to the slide's measured
+  content box, so a deck whose CSS size differs from its declared (or default)
+  size shows no inner band; the crop is a view detail and never rewrites the
+  file. Decks whose declared size matches their content are unchanged.
 
 ## Objects
 
@@ -126,6 +130,30 @@ feedback is editor-only too: the hint explains why the gesture cannot edit
 group) and writes nothing. A nested geometry edit does write inline styles to
 the selected element, exactly like a top-level edit; text leaves inside a
 container still edit inline.
+
+The editor's pointer target is the component, not only the slide root. A click
+resolves the innermost visible component: the deepest non-inline box, an atomic
+image or chart figure, or a guarded wrapper. Tables are atomic for geometry,
+not for selection: a click resolves the innermost `td`/`th`, while the table
+object is selected through its border, the OBJECTS row, or the breadcrumb. This
+supersedes the earlier rule that a slide-level click selected the top-level
+object. An entered context keeps the direct-child selection described above.
+SVG internals are reached by entering the `<svg>` (double-click, Enter, the
+OBJECTS chevron, or the Inspector's Enter action) and move through a
+post-multiplied `transform` translation in local user units; a shape whose
+transform is owned by CSS stays selectable but does not move. A table cell is
+selectable because the table toolbar needs it, but it has no geometry gesture
+of its own: a drag explains that the table moves as one object. A single nested
+or SVG selection supports delete, duplicate, and copy/paste inside its parent,
+with fresh `data-ppt-el` ids. HTML copies offset by 20 design px. An SVG root
+(not SVG-internal) uses the same 20 design px CSS positioning fallback, while
+an SVG-internal copy appends `translate(20 20)` in its local user units
+instead, so the rendered offset depends on the viewBox scale; when CSS owns the
+shape's transform, the copy stays inert and writes no offset attribute. A
+nested multi-selection drags but refuses structural commands, and a
+multi-component clipboard cannot paste onto a nested anchor. Component
+selection, hover, entered context, and clipboard contents are editor-only state
+and are never saved.
 
 Objects are styled with inline `style` attributes and CSS classes. The editor
 may add `position: relative` to a statically positioned slide root while
@@ -194,6 +222,11 @@ A standalone multi-slide deck needs exactly one runtime script:
   using its `data-width`/`data-height` (falling back to its computed size).
   Resizing the window refits it, and each slide keeps its own aspect ratio.
   Screen scaling resets for print so exported pages keep their authored size.
+- The editor's built-in play view offers Fit (default) and Fill. Fit uses the
+  measured slide box and letterboxes it; Fill covers the viewport and crops
+  the overflow. Exported decks and the standalone runtime keep Fit. Play
+  measures the rendered slide box when it fits inside the preview viewport;
+  content that overflows the viewport falls back to metadata.
 - Multi-slide decks get prev/next buttons and a page indicator pinned to the
   bottom of the window. Single-slide decks get no controls, and controls are
   hidden when printing. Control clicks never advance the deck.
