@@ -297,11 +297,11 @@ async function main() {
     assert(installedManifest.bin?.htmlppt, 'installed package has no htmlppt bin');
     assert(installedManifest.bin?.['htmlppt-mcp'], 'installed package has no htmlppt-mcp bin');
     assert(
-      installedManifest.bin.htmlppt === './dist/cli.js',
+      installedManifest.bin.htmlppt === 'dist/cli.js',
       `htmlppt bin points at ${installedManifest.bin.htmlppt}`
     );
     assert(
-      installedManifest.bin['htmlppt-mcp'] === './dist/mcp.js',
+      installedManifest.bin['htmlppt-mcp'] === 'dist/mcp.js',
       `htmlppt-mcp bin points at ${installedManifest.bin['htmlppt-mcp']}`
     );
 
