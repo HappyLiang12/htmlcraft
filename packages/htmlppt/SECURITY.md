@@ -1,9 +1,9 @@
 # Security
 
-htmlppt runs locally. The editor host binds to `127.0.0.1` and requires the
-per-deck capability token minted by the first `htmlppt open`. `open` records the
+htmlcraft runs locally. The editor host binds to `127.0.0.1` and requires the
+per-deck capability token minted by the first `htmlcraft open`. `open` records the
 token and port in a local credential store and reuses them for that deck until
-`htmlppt stop` rotates the token. A stale-build replacement rotates it too,
+`htmlcraft stop` rotates the token. A stale-build replacement rotates it too,
 because `open` stops the broken host first, so a URL bookmarked before the
 replacement needs the newly printed one. The tokenized first visit sets an
 HttpOnly, `SameSite=Strict` session cookie with a 30-day `Max-Age`. It serves
@@ -25,7 +25,7 @@ See the repository `SECURITY.md` for the full threat model.
 Do not open a public issue for a security problem. Report it privately through
 the repository's GitHub Security Advisories ("Report a vulnerability") with:
 
-- the htmlppt version and operating system,
+- the htmlcraft version and operating system,
 - reproduction steps or a minimal deck,
 - the impact you observed.
 

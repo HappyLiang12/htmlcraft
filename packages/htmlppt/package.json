@@ -1,9 +1,9 @@
 {
-  "name": "htmlppt",
+  "name": "htmlcraft",
   "version": "0.1.0",
   "description": "Visual editor, CLI, and MCP server for self-contained HTML presentations",
   "license": "MIT",
-  "author": "htmlppt contributors",
+  "author": "htmlcraft contributors",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/HappyLiang12/htmlppt.git"
@@ -25,8 +25,8 @@
   "type": "module",
   "engines": { "node": ">=20" },
   "bin": {
-    "htmlppt": "dist/cli.js",
-    "htmlppt-mcp": "dist/mcp.js"
+    "htmlcraft": "dist/cli.js",
+    "htmlcraft-mcp": "dist/mcp.js"
   },
   "files": [
     "dist",

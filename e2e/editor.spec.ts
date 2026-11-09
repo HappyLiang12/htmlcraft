@@ -2115,7 +2115,7 @@ test(
         '[data-testid="object-row"][data-object-path="0"]'
       );
       await expect(innerRow).toContainText('div');
-      await expect(innerRow).toContainText('htmlppt');
+      await expect(innerRow).toContainText('htmlcraft');
       await expect(innerRow).toContainText('Untitled deck');
       await boxRow.click();
 

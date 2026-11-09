@@ -8,7 +8,7 @@ import { ensureBuiltWorkspaces } from '@htmlppt/test-utils';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 const repoRoot = fileURLToPath(new URL('../../..', import.meta.url));
-const examplesDir = join(repoRoot, 'skills', 'htmlppt', 'examples');
+const examplesDir = join(repoRoot, 'skills', 'htmlcraft', 'examples');
 const cliBin = join(repoRoot, 'packages', 'cli', 'dist', 'bin.js');
 const EXAMPLES = ['basic.html', 'table-chart.html', 'notes-transitions.html'];
 

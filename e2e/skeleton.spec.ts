@@ -135,7 +135,7 @@ test(
         'utf8'
       );
       expect(exported).toContain(
-        '<!-- Edited with htmlppt. Format: htmldeck/v1. -->'
+        '<!-- Edited with htmlcraft. Format: htmldeck/v1. -->'
       );
       expect(exported).toContain('Final deck title');
       expect(exported).not.toContain('Updated deck title');

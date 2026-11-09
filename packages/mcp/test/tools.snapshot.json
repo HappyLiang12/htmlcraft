@@ -407,7 +407,7 @@
   },
   {
     "name": "get_deck_contract",
-    "description": "Return the deck contract and authoring guidance for htmlppt documents.",
+    "description": "Return the deck contract and authoring guidance for htmlcraft documents.",
     "inputSchema": {
       "type": "object",
       "properties": {},

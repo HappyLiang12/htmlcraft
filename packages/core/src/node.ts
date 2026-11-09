@@ -118,7 +118,7 @@ async function writeDeckFileAtomicLocked(
 
   const temporaryPath = path.join(
     path.dirname(filePath),
-    `.${path.basename(filePath)}.${randomUUID()}.htmlppt.tmp`
+    `.${path.basename(filePath)}.${randomUUID()}.htmlcraft.tmp`
   );
   try {
     await writeFile(temporaryPath, html, 'utf8');
@@ -160,7 +160,7 @@ async function createDeckFileAtomicLocked(
 ): Promise<DeckWriteResult> {
   const temporaryPath = path.join(
     path.dirname(filePath),
-    `.${path.basename(filePath)}.${randomUUID()}.htmlppt.tmp`
+    `.${path.basename(filePath)}.${randomUUID()}.htmlcraft.tmp`
   );
   try {
     const handle = await open(temporaryPath, 'wx');

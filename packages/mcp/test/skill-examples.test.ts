@@ -7,10 +7,10 @@ import { RUNTIME_SOURCE } from '@htmlppt/runtime';
 import { describe, expect, it } from 'vitest';
 
 const examplesDir = fileURLToPath(
-  new URL('../../../skills/htmlppt/examples', import.meta.url)
+  new URL('../../../skills/htmlcraft/examples', import.meta.url)
 );
 
-describe('htmlppt skill examples', () => {
+describe('htmlcraft skill examples', () => {
   it('ships only valid examples with the real runtime script', async () => {
     const names = (await readdir(examplesDir))
       .filter((name) => name.endsWith('.html'))

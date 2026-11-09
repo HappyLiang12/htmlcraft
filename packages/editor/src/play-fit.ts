@@ -14,7 +14,7 @@ export interface ViewportSize {
   height: number;
 }
 
-export const PLAY_FIT_STORAGE_KEY = 'htmlppt.play-fit';
+export const PLAY_FIT_STORAGE_KEY = 'htmlcraft.play-fit';
 
 export function scaleFor(
   box: SlideBox,

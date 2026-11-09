@@ -72,8 +72,8 @@ afterEach(async () => {
 
 describe('withProviders', () => {
   it('defaults to zh-Hant and dark regardless of storage and the OS', async () => {
-    localStorage.setItem('htmlppt.locale', 'en');
-    localStorage.setItem('htmlppt.theme', 'light');
+    localStorage.setItem('htmlcraft.locale', 'en');
+    localStorage.setItem('htmlcraft.theme', 'light');
     stubMatchMedia(false);
 
     await render(

@@ -20,7 +20,7 @@ export type Translator = (
   vars?: Record<string, string | number>
 ) => string;
 
-export const LOCALE_STORAGE_KEY = 'htmlppt.locale';
+export const LOCALE_STORAGE_KEY = 'htmlcraft.locale';
 
 const DICTIONARIES: Record<Locale, Record<MessageKey, string>> = {
   en,

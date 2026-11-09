@@ -1025,7 +1025,7 @@ test.describe('theme', () => {
       const lightErrorText = await measureContrast(page, 'standalone-error');
       expect(lightErrorBorder.border).toBe(lightErrorToken);
 
-      await page.evaluate(() => localStorage.setItem('htmlppt.theme', 'dark'));
+      await page.evaluate(() => localStorage.setItem('htmlcraft.theme', 'dark'));
       await page.reload();
       await expect(html).toHaveAttribute('data-theme', 'dark');
       await expect(page.getByTestId('recovery-draft')).toHaveCount(1);

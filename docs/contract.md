@@ -211,9 +211,9 @@ A standalone multi-slide deck needs exactly one runtime script:
 - A multi-slide deck with no runtime marker produces the `missing-runtime`
   warning. The document is still valid HTML but cannot present itself.
 - Validation checks only the marker, not the script body. An empty or commented
-  marker passes validation but will not present. Use `htmlppt new` or MCP
+  marker passes validation but will not present. Use `htmlcraft new` or MCP
   `create_deck` to write the real runtime, or copy it from
-  `skills/htmlppt/examples/basic.html`.
+  `skills/htmlcraft/examples/basic.html`.
 - The runtime handles arrow keys, space, Page Up/Down, Home/End, the `#/n`
   hash, and print styles. Noninteractive clicks advance. `F` toggles fullscreen
   and `P` opens a presenter window with notes, next-slide preview, and a timer.
@@ -379,7 +379,7 @@ Serialization writes `<!doctype html>` followed by the document element. HTML
 export also adds:
 
 ```html
-<!-- Edited with htmlppt. Format: htmldeck/v1. -->
+<!-- Edited with htmlcraft. Format: htmldeck/v1. -->
 ```
 
 Serialization goes through a real HTML parser. Valid markup, CSS, notes, chart
@@ -401,7 +401,7 @@ order, or invalid nesting.
 - **Round-trip:** opening an exported HTML file in the editor and editing it
   preserves the deck's meaning: slide ids, object ids, notes, transitions, chart
   JSON, and inline styles remain addressable. Scripts remain in the file but do
-  not run inside htmlppt.
+  not run inside htmlcraft.
 - **Source safety:** export never writes over the source deck. The host and MCP
   server confine their output directory to the deck directory.
 - **Rendering isolation:** the renderer permits only main-frame HTTP(S)
@@ -447,5 +447,5 @@ page:
 </html>
 ```
 
-For a multi-slide deck, let `htmlppt new` or MCP `create_deck` generate the
+For a multi-slide deck, let `htmlcraft new` or MCP `create_deck` generate the
 file so the real runtime body is present.

@@ -38,10 +38,10 @@ describe('theme helpers', () => {
     expect(readStoredTheme(stored(null))).toBe('system');
   });
 
-  it('reads the literal htmlppt.theme storage key', () => {
+  it('reads the literal htmlcraft.theme storage key', () => {
     const getItem = vi.fn(() => null);
     readStoredTheme({ getItem });
-    expect(getItem).toHaveBeenCalledWith('htmlppt.theme');
+    expect(getItem).toHaveBeenCalledWith('htmlcraft.theme');
   });
 
   it('falls back to system when storage throws', () => {

@@ -46,7 +46,7 @@ function runLane(lane, index) {
       cwd: root,
       shell: true,
       stdio: ['ignore', 'pipe', 'pipe'],
-      env: { ...process.env, HTMLPPT_LANE: String(index) }
+      env: { ...process.env, HTMLCRAFT_LANE: String(index) }
     });
     prefixPipe(child.stdout, `[${lane.name}]`, (line) => process.stdout.write(line));
     prefixPipe(child.stderr, `[${lane.name}]`, (line) => process.stderr.write(line));

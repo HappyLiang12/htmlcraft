@@ -1,7 +1,7 @@
 export type ThemeMode = 'light' | 'dark' | 'system';
 export type ResolvedTheme = 'light' | 'dark';
 
-export const THEME_STORAGE_KEY = 'htmlppt.theme';
+export const THEME_STORAGE_KEY = 'htmlcraft.theme';
 const MODES = new Set<ThemeMode>(['light', 'dark', 'system']);
 
 export function isThemeMode(value: unknown): value is ThemeMode {

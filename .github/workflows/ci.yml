@@ -106,7 +106,7 @@ jobs:
         run: npx playwright install chromium
       - if: runner.os == 'Linux'
         run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
-      - run: node -e "console.log('HTMLPPT_CHROMIUM=' + require('playwright-core').chromium.executablePath())" >> "$GITHUB_ENV"
+      - run: node -e "console.log('HTMLCRAFT_CHROMIUM=' + require('playwright-core').chromium.executablePath())" >> "$GITHUB_ENV"
       - run: npm run test:integration
       - uses: actions/upload-artifact@v4
         if: failure()
@@ -143,7 +143,7 @@ jobs:
         run: npx playwright install chromium
       - if: runner.os == 'Linux'
         run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
-      - run: node -e "console.log('HTMLPPT_CHROMIUM=' + require('playwright-core').chromium.executablePath())" >> "$GITHUB_ENV"
+      - run: node -e "console.log('HTMLCRAFT_CHROMIUM=' + require('playwright-core').chromium.executablePath())" >> "$GITHUB_ENV"
       - run: npm run test:e2e
       - uses: actions/upload-artifact@v4
         if: failure()
@@ -202,7 +202,7 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
-      - run: node -e "console.log('HTMLPPT_CHROMIUM=' + require('playwright-core').chromium.executablePath())" >> "$GITHUB_ENV"
+      - run: node -e "console.log('HTMLCRAFT_CHROMIUM=' + require('playwright-core').chromium.executablePath())" >> "$GITHUB_ENV"
       - run: npm run verify:all
       - uses: actions/upload-artifact@v4
         if: failure()

@@ -80,7 +80,7 @@ describe('standalone persistence', () => {
         clicks.push(this.download);
       }
     );
-    const create = vi.fn(() => 'blob:htmlppt');
+    const create = vi.fn(() => 'blob:htmlcraft');
     const revoke = vi.fn();
     Object.defineProperty(URL, 'createObjectURL', {
       configurable: true,

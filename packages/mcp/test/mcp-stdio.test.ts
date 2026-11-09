@@ -62,16 +62,16 @@ const EXPECTED_TOOLS = [
 ];
 
 const RESOURCE_URIS = [
-  'htmlppt://contract',
-  'htmlppt://authoring',
-  'htmlppt://example'
+  'htmlcraft://contract',
+  'htmlcraft://authoring',
+  'htmlcraft://example'
 ];
 
 const toolsSnapshotPath = fileURLToPath(
   new URL('./tools.snapshot.json', import.meta.url)
 );
 const skillToolsDocPath = fileURLToPath(
-  new URL('../../../skills/htmlppt/references/mcp-tools.md', import.meta.url)
+  new URL('../../../skills/htmlcraft/references/mcp-tools.md', import.meta.url)
 );
 
 interface SurfaceState {
@@ -163,7 +163,7 @@ const READ_TOOL_CASES: ToolCase[] = [
     args: () => ({}),
     verify: async (_state, payload) => {
       expect(String(payload.contract)).toContain('htmldeck/v1');
-      expect(String(payload.authoring)).toContain('htmlppt');
+      expect(String(payload.authoring)).toContain('htmlcraft');
     }
   },
   {
@@ -531,7 +531,7 @@ const MUTATION_TOOL_CASES: ToolCase[] = [
         outputPath: state.exportedPath
       });
       const exported = await readFile(state.exportedPath, 'utf8');
-      expect(exported).toContain('<!-- Edited with htmlppt.');
+      expect(exported).toContain('<!-- Edited with htmlcraft.');
       expect(validateDeck(parseDeckHtml(exported)).valid).toBe(true);
     }
   },
@@ -858,7 +858,7 @@ function runProcess(
 
 beforeAll(async () => {
   await ensureBuiltWorkspaces();
-  dir = await makeTempDir('htmlppt-mcp-stdio-');
+  dir = await makeTempDir('htmlcraft-mcp-stdio-');
   home = join(dir, 'home');
   await mkdir(home, { recursive: true });
   editorDir = join(dir, 'editor');
@@ -868,16 +868,16 @@ beforeAll(async () => {
     '<!doctype html><title>Editor</title><div id="root">editor-shell</div>',
     'utf8'
   );
-  previousHome = process.env.HTMLPPT_HOME;
-  process.env.HTMLPPT_HOME = home;
+  previousHome = process.env.HTMLCRAFT_HOME;
+  process.env.HTMLCRAFT_HOME = home;
   transport = new StdioClientTransport({
     command: process.execPath,
     args: [binPath],
     cwd: dir,
     env: {
       ...getDefaultEnvironment(),
-      HTMLPPT_HOME: home,
-      HTMLPPT_EDITOR_DIR: editorDir
+      HTMLCRAFT_HOME: home,
+      HTMLCRAFT_EDITOR_DIR: editorDir
     },
     stderr: 'pipe'
   });
@@ -890,9 +890,9 @@ afterAll(async () => {
     await client?.close();
   } finally {
     if (previousHome === undefined) {
-      delete process.env.HTMLPPT_HOME;
+      delete process.env.HTMLCRAFT_HOME;
     } else {
-      process.env.HTMLPPT_HOME = previousHome;
+      process.env.HTMLCRAFT_HOME = previousHome;
     }
     if (dir) {
       await rm(dir, { recursive: true, force: true });
@@ -900,7 +900,7 @@ afterAll(async () => {
   }
 });
 
-describe('htmlppt MCP stdio server', () => {
+describe('htmlcraft MCP stdio server', () => {
   it('completes the initialize handshake and lists every tool @feature:mcp', async () => {
     const { tools } = await client.listTools();
 
@@ -932,17 +932,17 @@ describe('htmlppt MCP stdio server', () => {
       expect(resource.name.length).toBeGreaterThan(0);
     }
 
-    const contract = await client.readResource({ uri: 'htmlppt://contract' });
-    const contractText = resourceText(contract.contents, 'htmlppt://contract');
+    const contract = await client.readResource({ uri: 'htmlcraft://contract' });
+    const contractText = resourceText(contract.contents, 'htmlcraft://contract');
     expect(contractText).toContain('data-slide-id');
     expect(contractText).toContain('data-ppt-el');
 
-    const authoring = await client.readResource({ uri: 'htmlppt://authoring' });
-    const authoringText = resourceText(authoring.contents, 'htmlppt://authoring');
-    expect(authoringText).toContain('htmlppt');
+    const authoring = await client.readResource({ uri: 'htmlcraft://authoring' });
+    const authoringText = resourceText(authoring.contents, 'htmlcraft://authoring');
+    expect(authoringText).toContain('htmlcraft');
 
-    const example = await client.readResource({ uri: 'htmlppt://example' });
-    const exampleText = resourceText(example.contents, 'htmlppt://example');
+    const example = await client.readResource({ uri: 'htmlcraft://example' });
+    const exampleText = resourceText(example.contents, 'htmlcraft://example');
     expect(exampleText).toContain('data-ppt-runtime="1"');
     expect(exampleText).toContain('data-ppt-chart');
     // The example ships the real presentation runtime, not an empty marker.
@@ -1045,7 +1045,7 @@ describe('htmlppt MCP stdio server', () => {
       outputPath: exportPath
     });
     const exportedHtml = await readFile(exportPath, 'utf8');
-    expect(exportedHtml).toContain('<!-- Edited with htmlppt.');
+    expect(exportedHtml).toContain('<!-- Edited with htmlcraft.');
     expect(exportedHtml).toContain('Edited by MCP');
     const exportedDocument = parseDeckHtml(exportedHtml);
     const exportValidation = validateDeck(exportedDocument);
@@ -1603,7 +1603,7 @@ describe('htmlppt MCP stdio server', () => {
     });
     expect(await readFile(deckPath, 'utf8')).toBe(original);
     const leftovers = (await readdir(dir)).filter((name) =>
-      name.endsWith('.htmlppt.tmp')
+      name.endsWith('.htmlcraft.tmp')
     );
     expect(leftovers).toEqual([]);
   });
@@ -2044,7 +2044,7 @@ describe('htmlppt MCP stdio server', () => {
         [cliBinPath, 'stop', deckPath],
         {
           cwd: dir,
-          env: { ...getDefaultEnvironment(), HTMLPPT_HOME: home }
+          env: { ...getDefaultEnvironment(), HTMLCRAFT_HOME: home }
         }
       );
       expect(stopped.code).toBe(0);
@@ -2263,7 +2263,7 @@ describe('htmlppt MCP stdio server', () => {
           [cliBinPath, 'stop', state.deckPath],
           {
             cwd: dir,
-            env: { ...getDefaultEnvironment(), HTMLPPT_HOME: home }
+            env: { ...getDefaultEnvironment(), HTMLCRAFT_HOME: home }
           }
         );
         expect(stopped.code).toBe(0);

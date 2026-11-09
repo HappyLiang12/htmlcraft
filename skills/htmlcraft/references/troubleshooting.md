@@ -1,10 +1,10 @@
-# Troubleshooting htmlppt
+# Troubleshooting htmlcraft
 
 Start with the cheapest probe:
 
 ```bash
-htmlppt validate deck.html --json     # errors, warnings, info, valid
-htmlppt outline deck.html --json      # slide and element ids
+htmlcraft validate deck.html --json     # errors, warnings, info, valid
+htmlcraft outline deck.html --json      # slide and element ids
 ```
 
 Through MCP, use `validate_deck` and `get_outline` for the same data. Re-read
@@ -38,7 +38,7 @@ Warnings do not block saving or export but usually predict a broken round trip.
 | `missing-title` | Add a non-empty `<title>`. |
 | `single-body-fallback` | Add explicit slides (`data-slide-id`); the body fallback is hard to edit. |
 | `missing-slide-id` | Add a unique `data-slide-id`. Normalization invents one, but an explicit id is stable. |
-| `missing-runtime` | Copy the real runtime script from `examples/basic.html`, or regenerate with `create_deck`/`htmlppt new`. |
+| `missing-runtime` | Copy the real runtime script from `examples/basic.html`, or regenerate with `create_deck`/`htmlcraft new`. |
 | `script-present` | Remove non-runtime scripts or accept that they do not run in the editor. |
 | `relative-asset` | Use a `data:` URI or an absolute URL for images, fonts, and `url(...)` values. |
 | `fixed-layout` | Replace `position: fixed` and full-height `100vh` units with fixed-canvas absolute positioning. Other viewport units are not detected but still scale with the window. |
@@ -95,7 +95,7 @@ replacing the existing deck.
 `npm run build` so `packages/editor/dist` and the CLI dist exist. If it reports
 `editor-failed`, the spawned CLI exited with a non-zero code or was terminated
 by a signal before publishing a healthy session, and the message names that
-code or signal: run `htmlppt open <file> --no-browser` manually and read its
+code or signal: run `htmlcraft open <file> --no-browser` manually and read its
 stderr. If it reports `editor-timeout`, the CLI did not publish a healthy
 session within 5 seconds (an exit with code 0 before a session surfaces here,
 not as `editor-failed`): run the same command manually.
@@ -110,7 +110,7 @@ by hand unless the automatic replacement itself fails.
 
 ### Unexpected host behavior
 
-`HTMLPPT_MCP_MODE=direct` forces direct file access even when a host session
+`HTMLCRAFT_MCP_MODE=direct` forces direct file access even when a host session
 exists. Use it only as a temporary diagnostic; it bypasses host synchronization
 and can make the editor miss changes. Unset it for normal operation.
 
@@ -120,7 +120,7 @@ CLI failures print a message to stderr and exit 1.
 
 | Message | Cause and fix |
 | --- | --- |
-| `Deck file not found: <file>. Create one with "htmlppt new <file>".` | `open` path is wrong or the deck does not exist. |
+| `Deck file not found: <file>. Create one with "htmlcraft new <file>".` | `open` path is wrong or the deck does not exist. |
 | `Deck file not found: <file>.` | `outline` path is wrong. |
 | `Deck file could not be read: <file>.` | The path is a directory or permissions block reading. |
 | `Refusing to overwrite <file>. Pass --force to replace it.` | `new` found an existing file. Choose another name or pass `--force`. |
@@ -128,33 +128,33 @@ CLI failures print a message to stderr and exit 1.
 | `Invalid --slides. Use a positive integer up to 1000.` | Fix the `--slides` value. |
 | `Port <port> is already in use. Omit --port or choose another.` | Another process owns the port. Omit `--port` to let `open` retry the deck's recorded port and fall back to an ephemeral one, or choose another port. |
 | `Editor build not found. Run "npm run build" first.` | `packages/editor/dist` is missing. Build the workspace. |
-| `An editor for this deck appears to be running but is not responding. Retry in a moment or run "htmlppt stop <file>" to stop it.` | A recorded host has a live PID but its health check timed out or returned a 5xx (`unknown`), so `open` cannot prove it owns the deck and refuses to start a second host. Retry, or stop the recorded one. An alive host whose health passes but whose editor shell is broken is `stale-build` instead: `open` replaces it automatically, and this message is not printed. |
-| `No live editor session for <file>. Start one with "htmlppt open <file>".` | `stop` found nothing to stop for that deck. |
-| `A registered editor for this deck could not be verified; leaving it running. Retry "htmlppt stop <file>" when it responds.` | The caller's spelling has no registry entry, but the same deck is registered under another spelling (alias or short path) and its health check timed out or returned a 5xx (`unknown`). Nothing was stopped; retry when it responds. `stop --all` also leaves unverified entries running. |
+| `An editor for this deck appears to be running but is not responding. Retry in a moment or run "htmlcraft stop <file>" to stop it.` | A recorded host has a live PID but its health check timed out or returned a 5xx (`unknown`), so `open` cannot prove it owns the deck and refuses to start a second host. Retry, or stop the recorded one. An alive host whose health passes but whose editor shell is broken is `stale-build` instead: `open` replaces it automatically, and this message is not printed. |
+| `No live editor session for <file>. Start one with "htmlcraft open <file>".` | `stop` found nothing to stop for that deck. |
+| `A registered editor for this deck could not be verified; leaving it running. Retry "htmlcraft stop <file>" when it responds.` | The caller's spelling has no registry entry, but the same deck is registered under another spelling (alias or short path) and its health check timed out or returned a 5xx (`unknown`). Nothing was stopped; retry when it responds. `stop --all` also leaves unverified entries running. |
 | `Specify a deck file to stop or pass --all.` | `stop` needs a target. |
 | `Pass either a deck file or --all, not both.` | Use one form. |
 | `No live editor sessions.` | The registry is empty (no session files at all). |
 | `Removed <n> stale editor session(s).` | Success: `stop --all` cleaned entries whose process had exited. Exit 0. |
 | `Removed stale editor session for <path>.` | Success: a definitively stale entry was cleaned. |
-| `Could not verify a live editor for <path>; leaving it running. Retry "htmlppt stop <path>" when it responds.` | The PID is alive but health is unknown. The entry was kept. Retry later. |
+| `Could not verify a live editor for <path>; leaving it running. Retry "htmlcraft stop <path>" when it responds.` | The PID is alive but health is unknown. The entry was kept. Retry later. |
 | `No live editor sessions were stopped.` | Nothing was live or cleanable. |
-| `The editor session for <path> changed while stopping it. Retry "htmlppt stop <path>".` | The registry changed after verification. Re-run stop. |
+| `The editor session for <path> changed while stopping it. Retry "htmlcraft stop <path>".` | The registry changed after verification. Re-run stop. |
 | `The editor session for <path> disappeared before it could be stopped.` | The host removed its entry first. No action needed. |
-| `The editor process <pid> for <path> did not stop within 5 seconds. Stop it manually, then run "htmlppt stop <path>" again.` | The process ignored or outlived SIGTERM. Inspect the process before killing it manually. The timeout path is OS-limited and not covered by the automated tests. |
+| `The editor process <pid> for <path> did not stop within 5 seconds. Stop it manually, then run "htmlcraft stop <path>" again.` | The process ignored or outlived SIGTERM. Inspect the process before killing it manually. The timeout path is OS-limited and not covered by the automated tests. |
 | `Could not read the editor session registry at <dir>: ...` | The registry directory exists but is unreadable. Fix permissions, then retry the command. |
 | `Could not verify <n> editor session entries that are still in the registry at <dir>.` | Some entries survived pruning but could not be read or removed. Fix permissions, then retry `stop --all`. |
 | `Could not read the editor session entry for <path>.` | One entry is unreadable. Fix permissions on the registry, then retry. |
-| `Chromium is unavailable. Install Google Chrome, Microsoft Edge or Chromium, or set HTMLPPT_CHROMIUM to its executable path.` | PDF/PNG export needs a local browser. Install one, or set `HTMLPPT_CHROMIUM` to a Chrome/Edge/Chromium executable. |
+| `Chromium is unavailable. Install Google Chrome, Microsoft Edge or Chromium, or set HTMLCRAFT_CHROMIUM to its executable path.` | PDF/PNG export needs a local browser. Install one, or set `HTMLCRAFT_CHROMIUM` to a Chrome/Edge/Chromium executable. |
 | `Unsupported export format "<format>". Use --format html, pdf, or png.` | Fix `--format`. |
 | `Invalid --port. Use an integer between 0 and 65535.` | Fix the port number. |
 
-`open` reuses an editor for the same deck and prints its `HTMLPPT_URL` instead
+`open` reuses an editor for the same deck and prints its `HTMLCRAFT_URL` instead
 of starting a second host, but only when the authenticated health endpoint
 accepts the deck and `/d/<deck-name>` serves the built editor shell. A
 `stale-build` host (health OK, editor broken) is stopped and replaced on the
 recorded port; because that stop rotates the token, the printed URL carries a
-new token. The session registry lives under `~/.htmlppt/sessions`; set
-`HTMLPPT_HOME` to isolate it for tests or automation. `HTMLPPT_EDITOR_DIR`
+new token. The session registry lives under `~/.htmlcraft/sessions`; set
+`HTMLCRAFT_HOME` to isolate it for tests or automation. `HTMLCRAFT_EDITOR_DIR`
 overrides the editor build location.
 
 ## Editor and host behavior
@@ -182,7 +182,7 @@ overrides the editor build location.
 
 ## When to regenerate rather than repair
 
-Regenerate with `create_deck` / `htmlppt new` when the document has no explicit
+Regenerate with `create_deck` / `htmlcraft new` when the document has no explicit
 slides, has deeply nested slides, or has lost its runtime and ids beyond a
 small repair. Preserve the user's content by copying it into the fresh
 structure, then validate.

@@ -16,12 +16,12 @@
   remain top-level operations.
 - Table cells remain selectable for the table toolbar and native text
   selection, but cannot be geometry-dragged; the drag hint explains the rule.
-- Local per-deck credential store under `~/.htmlppt/decks` (override with
-  `HTMLPPT_HOME`) that records the host port and capability token, so
-  `htmlppt open` reuses the same URL across restarts until `htmlppt stop`.
+- Local per-deck credential store under `~/.htmlcraft/decks` (override with
+  `HTMLCRAFT_HOME`) that records the host port and capability token, so
+  `htmlcraft open` reuses the same URL across restarts until `htmlcraft stop`.
 - Liveness-verified host reuse: `open` probes both health and the editor shell,
   replaces a stale-build host, and the host serves an actionable 401 page that
-  names the deck and the `htmlppt open` recovery command instead of a plain
+  names the deck and the `htmlcraft open` recovery command instead of a plain
   unauthorized body.
 - Drill-in container editing: enter an unlocked, visible container from the
   canvas or the inspector, with a breadcrumb and an object list scoped to the
@@ -101,4 +101,4 @@
 
 - npm publish, tags, GitHub releases, and other shipping actions require
   explicit authorization.
-- Deck credentials live at `~/.htmlppt/decks`; `htmlppt stop` rotates the token.
+- Deck credentials live at `~/.htmlcraft/decks`; `htmlcraft stop` rotates the token.

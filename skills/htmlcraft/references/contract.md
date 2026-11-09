@@ -1,4 +1,4 @@
-# htmlppt deck contract (htmldeck/v1)
+# htmlcraft deck contract (htmldeck/v1)
 
 The HTML file is both the authoring format and the saved deck. The validator,
 editor, CLI, and MCP server all read and write this same contract.
@@ -82,7 +82,7 @@ Minimal explicit slide:
 - A missing runtime on a multi-slide deck is a warning (`missing-runtime`);
   the deck is still valid HTML but cannot present itself.
 - The runtime body must be the real runtime script, not an empty marker.
-  `create_deck` and `htmlppt new` write it. Copy it from
+  `create_deck` and `htmlcraft new` write it. Copy it from
   `../examples/basic.html` when hand-authoring. Validation checks only that a
   marker exists on a `<script>` with value `1`; it does not inspect the body,
   so a comment or an empty script still validates but cannot present.
@@ -138,7 +138,7 @@ Minimal explicit slide:
   `data-ppt-editing` and `data-ppt-frame-slide` are always rejected by
   validation (`editor-artifacts` error) if present in a saved file.
 - HTML export adds the generator comment
-  `<!-- Edited with htmlppt. Format: htmldeck/v1. -->` and, for a multi-slide
+  `<!-- Edited with htmlcraft. Format: htmldeck/v1. -->` and, for a multi-slide
   deck with no runtime and no script at all, appends the runtime.
 - Writes are atomic (temporary file plus rename) and compare against the
   revision last read or written. A changed file produces a structured

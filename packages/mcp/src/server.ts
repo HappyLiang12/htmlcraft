@@ -10,8 +10,8 @@ export function createMcpServer(
   options: CreateMcpServerOptions = {}
 ): McpServer {
   const server = new McpServer(
-    { name: 'htmlppt', version: '0.1.0' },
-    { instructions: 'Use htmlppt://contract and htmlppt://authoring before editing a deck.' }
+    { name: 'htmlcraft', version: '0.1.0' },
+    { instructions: 'Use htmlcraft://contract and htmlcraft://authoring before editing a deck.' }
   );
   registerTools(server, options);
   registerResources(server);

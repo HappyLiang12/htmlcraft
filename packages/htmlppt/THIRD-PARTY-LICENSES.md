@@ -1,6 +1,6 @@
 # Third-party licenses
 
-htmlppt is MIT-licensed; see [LICENSE](LICENSE).
+htmlcraft is MIT-licensed; see [LICENSE](LICENSE).
 
 This package bundles the third-party packages listed below. Their license texts
 are reproduced here to satisfy the attribution requirements of those licenses.

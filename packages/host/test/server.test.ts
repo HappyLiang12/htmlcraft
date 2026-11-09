@@ -218,7 +218,7 @@ function putDeck(
     'content-type': 'application/json'
   };
   if (options.source) {
-    headers['x-htmlppt-source'] = options.source;
+    headers['x-htmlcraft-source'] = options.source;
   }
   return fetch(`${ctx.base}/api/deck`, {
     method: 'PUT',
@@ -324,7 +324,7 @@ async function setup(
 }
 
 function expectedSessionCookie(token: string): string {
-  return `htmlppt_token=${encodeURIComponent(token)}; HttpOnly; SameSite=Strict; Path=/; Max-Age=2592000`;
+  return `htmlcraft_token=${encodeURIComponent(token)}; HttpOnly; SameSite=Strict; Path=/; Max-Age=2592000`;
 }
 
 async function bootstrapCookie(ctx: Context): Promise<string> {
@@ -448,7 +448,7 @@ describe('host', () => {
     expect(asset.status).toBe(401);
 
     const wrongCookie = await fetch(`${ctx.base}/app.js`, {
-      headers: { cookie: 'htmlppt_token=wrong' }
+      headers: { cookie: 'htmlcraft_token=wrong' }
     });
     expect(wrongCookie.status).toBe(401);
   });
@@ -463,10 +463,10 @@ describe('host', () => {
     expect(page.status).toBe(401);
     expect(page.headers.get('content-type')).toContain('text/html');
     const body = await page.text();
-    expect(body).toContain('<title>htmlppt</title>');
+    expect(body).toContain('<title>htmlcraft</title>');
     expect(body).toContain(basename(ctx.deckPath));
     expect(body).toContain('no valid session cookie');
-    expect(body).toContain('htmlppt open');
+    expect(body).toContain('htmlcraft open');
     expect(body).not.toContain('<script');
     expect(body).not.toContain(ctx.deckPath);
     expect(body).not.toContain(ctx.token);
@@ -541,7 +541,7 @@ describe('host', () => {
     expect(bootCookies).toHaveLength(1);
     expect(bootCookies[0]).toBe(expectedSessionCookie(ctx.token));
     const cookie = bootCookies[0]?.split(';')[0] ?? '';
-    expect(cookie).toBe(`htmlppt_token=${encodeURIComponent(ctx.token)}`);
+    expect(cookie).toBe(`htmlcraft_token=${encodeURIComponent(ctx.token)}`);
 
     const friendlyPath = `/d/${encodeURIComponent(basename(ctx.deckPath))}`;
     const rootWithCookie = await fetch(`${ctx.base}/`, {
@@ -985,7 +985,7 @@ describe('host', () => {
 
   it('serves static editor assets only with the session cookie', async () => {
     const ctx = await setup();
-    const cookie = `htmlppt_token=${encodeURIComponent(ctx.token)}`;
+    const cookie = `htmlcraft_token=${encodeURIComponent(ctx.token)}`;
 
     const response = await fetch(`${ctx.base}/app.js`, {
       headers: { cookie }
@@ -997,7 +997,7 @@ describe('host', () => {
 
   it('does not serve deck files other than the opened deck', async () => {
     const ctx = await setup();
-    const cookie = `htmlppt_token=${encodeURIComponent(ctx.token)}`;
+    const cookie = `htmlcraft_token=${encodeURIComponent(ctx.token)}`;
     const marker = 'sibling-deck-marker';
     await writeFile(
       join(ctx.dir, 'other.html'),
@@ -1015,7 +1015,7 @@ describe('host', () => {
 
   it('rejects encoded path traversal without leaking files', async () => {
     const ctx = await setup();
-    const cookie = `htmlppt_token=${encodeURIComponent(ctx.token)}`;
+    const cookie = `htmlcraft_token=${encodeURIComponent(ctx.token)}`;
     const deckMarker = 'parent-secret-marker';
     await writeFile(join(ctx.dir, 'parent-secret.txt'), deckMarker, 'utf8');
     const outsideMarker = 'outside-secret-marker';
@@ -1043,7 +1043,7 @@ describe('host', () => {
 
   it('does not expose directory listings', async () => {
     const ctx = await setup();
-    const cookie = `htmlppt_token=${encodeURIComponent(ctx.token)}`;
+    const cookie = `htmlcraft_token=${encodeURIComponent(ctx.token)}`;
     const marker = 'directory-secret-marker';
     await mkdir(join(ctx.editorDir, 'assets'));
     await writeFile(join(ctx.editorDir, 'assets', 'secret.txt'), marker, 'utf8');
@@ -1492,10 +1492,10 @@ describe('host', () => {
   it('rejects a deck already served by another live host', async () => {
     const ctx = await setup();
     const home = await makeTempDir('htmlppt-home-');
-    const previousHome = process.env.HTMLPPT_HOME;
+    const previousHome = process.env.HTMLCRAFT_HOME;
     const other = join(ctx.dir, 'shared.html');
     try {
-      process.env.HTMLPPT_HOME = home;
+      process.env.HTMLCRAFT_HOME = home;
       await writeFile(other, ctx.deckHtml, 'utf8');
       // Register the deck under an alias spelling. The 409 scan must compare
       // entries by realpath instead of assuming a canonical registry key.
@@ -1524,9 +1524,9 @@ describe('host', () => {
       });
     } finally {
       if (previousHome === undefined) {
-        delete process.env.HTMLPPT_HOME;
+        delete process.env.HTMLCRAFT_HOME;
       } else {
-        process.env.HTMLPPT_HOME = previousHome;
+        process.env.HTMLCRAFT_HOME = previousHome;
       }
       await rm(home, { recursive: true, force: true });
     }
@@ -1535,10 +1535,10 @@ describe('host', () => {
   it('reports the different host when a same-port entry matches first', async () => {
     const ctx = await setup();
     const home = await makeTempDir('htmlppt-home-');
-    const previousHome = process.env.HTMLPPT_HOME;
+    const previousHome = process.env.HTMLCRAFT_HOME;
     const other = join(ctx.dir, 'shared.html');
     try {
-      process.env.HTMLPPT_HOME = home;
+      process.env.HTMLCRAFT_HOME = home;
       await writeFile(other, ctx.deckHtml, 'utf8');
       // Two spellings of the same deck: the same-port duplicate sorts first,
       // so a scan that stops at the first match would hide the other host.
@@ -1581,9 +1581,9 @@ describe('host', () => {
       });
     } finally {
       if (previousHome === undefined) {
-        delete process.env.HTMLPPT_HOME;
+        delete process.env.HTMLCRAFT_HOME;
       } else {
-        process.env.HTMLPPT_HOME = previousHome;
+        process.env.HTMLCRAFT_HOME = previousHome;
       }
       await rm(home, { recursive: true, force: true });
     }

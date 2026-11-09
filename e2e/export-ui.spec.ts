@@ -71,7 +71,7 @@ test(
         })
         .toBe(true);
       expect(exportedHtml).toContain(
-        '<!-- Edited with htmlppt. Format: htmldeck/v1. -->'
+        '<!-- Edited with htmlcraft. Format: htmldeck/v1. -->'
       );
       expect(exportedHtml).toContain('Export UI');
       expect(await readFile(join(directory, 'fixture.html'), 'utf8')).toBe(

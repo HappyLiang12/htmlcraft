@@ -291,11 +291,11 @@ async function setupHost(): Promise<HostContext> {
 }
 
 beforeEach(async () => {
-  dir = await makeTempDir('htmlppt-mcp-');
-  previousHome = process.env.HTMLPPT_HOME;
-  previousMode = process.env.HTMLPPT_MCP_MODE;
-  process.env.HTMLPPT_HOME = join(dir, 'home');
-  delete process.env.HTMLPPT_MCP_MODE;
+  dir = await makeTempDir('htmlcraft-mcp-');
+  previousHome = process.env.HTMLCRAFT_HOME;
+  previousMode = process.env.HTMLCRAFT_MCP_MODE;
+  process.env.HTMLCRAFT_HOME = join(dir, 'home');
+  delete process.env.HTMLCRAFT_MCP_MODE;
 });
 
 afterEach(async () => {
@@ -304,14 +304,14 @@ afterEach(async () => {
   } finally {
     host = undefined;
     if (previousHome === undefined) {
-      delete process.env.HTMLPPT_HOME;
+      delete process.env.HTMLCRAFT_HOME;
     } else {
-      process.env.HTMLPPT_HOME = previousHome;
+      process.env.HTMLCRAFT_HOME = previousHome;
     }
     if (previousMode === undefined) {
-      delete process.env.HTMLPPT_MCP_MODE;
+      delete process.env.HTMLCRAFT_MCP_MODE;
     } else {
-      process.env.HTMLPPT_MCP_MODE = previousMode;
+      process.env.HTMLCRAFT_MCP_MODE = previousMode;
     }
     await rm(dir, { recursive: true, force: true });
   }
@@ -999,10 +999,10 @@ describe('waitForSession', () => {
       `exited with code 1 before publishing a session for ${deckPath}`
     );
     expect(message).toContain(
-      'Run "htmlppt open <path> --no-browser" in a terminal to see the error.'
+      'Run "htmlcraft open <path> --no-browser" in a terminal to see the error.'
     );
     // The suggestion is a template, not a command built from an unquoted path.
-    expect(message).not.toContain(`htmlppt open ${deckPath} --no-browser`);
+    expect(message).not.toContain(`htmlcraft open ${deckPath} --no-browser`);
   });
 
   it('reports a spawned CLI signal and a placeholder suggestion', async () => {
@@ -1022,9 +1022,9 @@ describe('waitForSession', () => {
       `terminated by SIGTERM before publishing a session for ${deckPath}`
     );
     expect(message).toContain(
-      'Run "htmlppt open <path> --no-browser" in a terminal to see the error.'
+      'Run "htmlcraft open <path> --no-browser" in a terminal to see the error.'
     );
-    expect(message).not.toContain(`htmlppt open ${deckPath} --no-browser`);
+    expect(message).not.toContain(`htmlcraft open ${deckPath} --no-browser`);
   });
 });
 
@@ -1176,10 +1176,10 @@ describe('createDeckService', () => {
     }
   });
 
-  it('forces direct mode with HTMLPPT_MCP_MODE=direct and keeps the session', async () => {
+  it('forces direct mode with HTMLCRAFT_MCP_MODE=direct and keeps the session', async () => {
     const ctx = await setupHost();
     const entry = await writeHostSession(ctx);
-    process.env.HTMLPPT_MCP_MODE = 'direct';
+    process.env.HTMLCRAFT_MCP_MODE = 'direct';
 
     const service = await createDeckService(deckPath);
 
@@ -1196,7 +1196,7 @@ describe('createDeckService', () => {
 
   it('forces direct mode even with explicit host options', async () => {
     const ctx = await setupHost();
-    process.env.HTMLPPT_MCP_MODE = 'direct';
+    process.env.HTMLCRAFT_MCP_MODE = 'direct';
 
     const service = await createDeckService(deckPath, {
       hostUrl: ctx.base,
@@ -1212,7 +1212,7 @@ describe('createDeckService', () => {
   it('allows host auto-selection for other mode values', async () => {
     const ctx = await setupHost();
     await writeHostSession(ctx);
-    process.env.HTMLPPT_MCP_MODE = 'host';
+    process.env.HTMLCRAFT_MCP_MODE = 'host';
 
     expect(await createDeckService(deckPath)).toBeInstanceOf(HostDeckService);
   });
@@ -1293,18 +1293,18 @@ describe('DeckService export', () => {
     'reports an unavailable renderer as a structured export error',
     async () => {
       deckPath = await copyFixture('basic.deck.html', dir);
-      const previous = process.env.HTMLPPT_CHROMIUM;
-      process.env.HTMLPPT_CHROMIUM = join(dir, 'missing-browser.exe');
+      const previous = process.env.HTMLCRAFT_CHROMIUM;
+      process.env.HTMLCRAFT_CHROMIUM = join(dir, 'missing-browser.exe');
       try {
         const error = await rejection(
           new DirectDeckService().exportFiles(deckPath, 'pdf', join(dir, 'out'))
         );
         expect(error).toBeInstanceOf(DeckExportError);
         expect((error as DeckExportError).code).toBe('renderer-unavailable');
-        expect(error.message).toContain('HTMLPPT_CHROMIUM');
+        expect(error.message).toContain('HTMLCRAFT_CHROMIUM');
       } finally {
-        if (previous === undefined) delete process.env.HTMLPPT_CHROMIUM;
-        else process.env.HTMLPPT_CHROMIUM = previous;
+        if (previous === undefined) delete process.env.HTMLCRAFT_CHROMIUM;
+        else process.env.HTMLCRAFT_CHROMIUM = previous;
       }
     },
     30_000

@@ -55,7 +55,7 @@ export function StandaloneLauncher({
         className="w-full max-w-xl rounded border border-line-strong bg-surface p-8 shadow-[0_24px_60px_var(--editor-shadow-panel)]"
       >
         <p className="text-xs uppercase tracking-[0.2em] text-accent">
-          htmlppt
+          htmlcraft
         </p>
         <h1 id="standalone-title" className="mt-2 text-xl font-semibold">
           {t('standalone.title')}
@@ -159,7 +159,7 @@ export function StandaloneLauncher({
         <p className="mt-6 text-xs text-muted">
           {t('standalone.commandHint')}{' '}
           <code className="rounded bg-chip px-1 py-0.5">
-            htmlppt open deck.html
+            htmlcraft open deck.html
           </code>
         </p>
       </section>

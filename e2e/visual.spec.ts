@@ -20,7 +20,7 @@ import { startCliHost } from './helpers';
 
 // The editor screenshot and the export renderer must use the same Chromium
 // build; otherwise system Chrome on a CI runner can shift AA and text pixels.
-process.env.HTMLPPT_CHROMIUM = chromium.executablePath();
+process.env.HTMLCRAFT_CHROMIUM = chromium.executablePath();
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 const cliPath = join(repoRoot, 'packages/cli/dist/bin.js');
