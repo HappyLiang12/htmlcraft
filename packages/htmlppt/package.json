@@ -25,8 +25,8 @@
   "type": "module",
   "engines": { "node": ">=20" },
   "bin": {
-    "htmlppt": "./dist/cli.js",
-    "htmlppt-mcp": "./dist/mcp.js"
+    "htmlppt": "dist/cli.js",
+    "htmlppt-mcp": "dist/mcp.js"
   },
   "files": [
     "dist",
