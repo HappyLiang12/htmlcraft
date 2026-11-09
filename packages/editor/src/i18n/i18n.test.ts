@@ -69,10 +69,10 @@ describe('detectLocale', () => {
 });
 
 describe('resolveInitialLocale', () => {
-  it('reads the literal htmlppt.locale storage key', () => {
+  it('reads the literal htmlcraft.locale storage key', () => {
     const getItem = vi.fn(() => null);
     resolveInitialLocale({ getItem });
-    expect(getItem).toHaveBeenCalledWith('htmlppt.locale');
+    expect(getItem).toHaveBeenCalledWith('htmlcraft.locale');
   });
 
   it.each(['en', 'zh-Hant', 'zh-Hans'] as const)(
@@ -159,7 +159,7 @@ describe('LocaleProvider', () => {
   ] as const)(
     'restores a valid stored %s locale when no initial locale is given',
     async (stored, close) => {
-      localStorage.setItem('htmlppt.locale', stored);
+      localStorage.setItem('htmlcraft.locale', stored);
       await renderProvider();
       expect(current.locale).toBe(stored);
       expect(document.documentElement.lang).toBe(stored);
@@ -186,7 +186,7 @@ describe('LocaleProvider', () => {
     expect(current.locale).toBe('zh-Hant');
     expect(current.t('common.close')).toBe('關閉');
     expect(document.documentElement.lang).toBe('zh-Hant');
-    expect(localStorage.getItem('htmlppt.locale')).toBe('zh-Hant');
+    expect(localStorage.getItem('htmlcraft.locale')).toBe('zh-Hant');
   });
 
   it('still switches locales when setItem throws', async () => {

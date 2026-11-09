@@ -1,6 +1,6 @@
-# htmlppt MCP server
+# htmlcraft MCP server
 
-`htmlppt mcp` (or the `htmlppt-mcp` bin) runs a stdio Model Context Protocol
+`htmlcraft mcp` (or the `htmlcraft-mcp` bin) runs a stdio Model Context Protocol
 (MCP) server for agents. It exposes 25 deck tools and 3 resources and edits the
 same `htmldeck/v1` files as the CLI and editor.
 
@@ -13,9 +13,9 @@ here.
 Installed package:
 
 ```bash
-htmlppt-mcp
+htmlcraft-mcp
 # or
-htmlppt mcp
+htmlcraft mcp
 ```
 
 Example MCP client configuration:
@@ -23,9 +23,9 @@ Example MCP client configuration:
 ```json
 {
   "mcpServers": {
-    "htmlppt": {
+    "htmlcraft": {
       "command": "npx",
-      "args": ["-y", "htmlppt", "mcp"]
+      "args": ["-y", "htmlcraft", "mcp"]
     }
   }
 }
@@ -42,13 +42,13 @@ The server chooses a storage mode per deck:
 | Mode | When | Behavior |
 | --- | --- | --- |
 | **Host-attached** | A healthy editor host is registered for the deck. | Deck reads, most mutations, and PDF/PNG exports go through the authenticated loopback host. Host-routed writes are validated and broadcast to the editor as `revision` events with `source: "mcp"`. `create_deck` still creates the new file directly, and HTML export writes the cleaned file directly. |
-| **Direct** | No live host is found, or `HTMLPPT_MCP_MODE=direct` is set. | Reads and writes the file directly with the server process's permissions. Writes are atomic and revision-checked. |
+| **Direct** | No live host is found, or `HTMLCRAFT_MCP_MODE=direct` is set. | Reads and writes the file directly with the server process's permissions. Writes are atomic and revision-checked. |
 
 Host selection is automatic. A host is reusable only when its authenticated
 `/api/health` endpoint accepts the deck and it serves the built editor shell; a
 health-only host with a broken editor is not treated as host mode. A registry
 entry with a live PID but a dead or unauthenticated health endpoint is treated
-as stale. `HTMLPPT_MCP_MODE=direct` is a universal override; any other value
+as stale. `HTMLCRAFT_MCP_MODE=direct` is a universal override; any other value
 allows auto-selection.
 
 ## Conventions
@@ -186,7 +186,7 @@ the exit code or signal), and `editor-timeout` when no healthy session appears
 within 5 seconds; on timeout it terminates the spawned host. A spawned CLI that
 exits with code 0 before publishing a session is not `editor-failed`; it
 surfaces as `editor-timeout`. `export_deck` requires a system Chrome, Edge, or
-Chromium (or `HTMLPPT_CHROMIUM`) for PDF/PNG and fails with
+Chromium (or `HTMLCRAFT_CHROMIUM`) for PDF/PNG and fails with
 `renderer-unavailable` when none is found. An invalid deck fails with
 `invalid-deck` and includes `errors`.
 
@@ -194,12 +194,12 @@ Chromium (or `HTMLPPT_CHROMIUM`) for PDF/PNG and fails with
 
 | URI | MIME type | Content |
 | --- | --- | --- |
-| `htmlppt://contract` | `text/markdown` | The `htmldeck/v1` contract. |
-| `htmlppt://authoring` | `text/markdown` | Agent-oriented authoring and editing guidance. |
-| `htmlppt://example` | `text/html` | A minimal valid deck with text, image, shape, table, chart, notes, transitions, and the real runtime. |
+| `htmlcraft://contract` | `text/markdown` | The `htmldeck/v1` contract. |
+| `htmlcraft://authoring` | `text/markdown` | Agent-oriented authoring and editing guidance. |
+| `htmlcraft://example` | `text/html` | A minimal valid deck with text, image, shape, table, chart, notes, transitions, and the real runtime. |
 
-Read `htmlppt://contract` and `htmlppt://authoring` before the first edit in a
-session. Read `htmlppt://example` when you need a working reference deck.
+Read `htmlcraft://contract` and `htmlcraft://authoring` before the first edit in a
+session. Read `htmlcraft://example` when you need a working reference deck.
 
 ## Error codes
 
@@ -247,7 +247,7 @@ Domain errors return `isError: true` with a JSON payload:
 | `renderer-unavailable` | No Chrome, Edge, or Chromium was found for PDF/PNG. |
 | `export-failed` | Rendering or the host export path failed. |
 | `editor-unavailable` | The built CLI was not found; run `npm run build`. |
-| `editor-failed` | The spawned CLI exited with a non-zero code or was terminated by a signal before publishing a healthy session; the message names the exit code or signal. Run `htmlppt open <file> --no-browser` and read its stderr. |
+| `editor-failed` | The spawned CLI exited with a non-zero code or was terminated by a signal before publishing a healthy session; the message names the exit code or signal. Run `htmlcraft open <file> --no-browser` and read its stderr. |
 | `editor-timeout` | No healthy editor session appeared within 5 seconds. |
 | `internal` | Unexpected failure; read `message`. |
 
@@ -263,7 +263,7 @@ hex strings and are shortened here.
 
 ```json
 {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"example","version":"1.0.0"}}}
-{"jsonrpc":"2.0","id":1,"result":{"protocolVersion":"2024-11-05","capabilities":{"tools":{"listChanged":true},"resources":{"listChanged":true}},"serverInfo":{"name":"htmlppt","version":"0.1.0"},"instructions":"Use htmlppt://contract and htmlppt://authoring before editing a deck."}}
+{"jsonrpc":"2.0","id":1,"result":{"protocolVersion":"2024-11-05","capabilities":{"tools":{"listChanged":true},"resources":{"listChanged":true}},"serverInfo":{"name":"htmlcraft","version":"0.1.0"},"instructions":"Use htmlcraft://contract and htmlcraft://authoring before editing a deck."}}
 ```
 
 The server negotiates the protocol version supported by the client/SDK. Send

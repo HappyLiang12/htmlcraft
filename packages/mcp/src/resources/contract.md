@@ -1,4 +1,4 @@
-# htmlppt deck contract (htmldeck/v1)
+# htmlcraft deck contract (htmldeck/v1)
 
 A deck is one self-contained HTML document. The editor, validator, and MCP tools
 all read and write the same contract.

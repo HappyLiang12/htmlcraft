@@ -105,12 +105,12 @@ let originalOverride: string | undefined;
 
 beforeEach(async () => {
   dir = await mkdtemp(path.join(tmpdir(), 'htmlppt-renderer-'));
-  originalOverride = process.env.HTMLPPT_CHROMIUM;
+  originalOverride = process.env.HTMLCRAFT_CHROMIUM;
 });
 
 afterEach(async () => {
-  if (originalOverride === undefined) delete process.env.HTMLPPT_CHROMIUM;
-  else process.env.HTMLPPT_CHROMIUM = originalOverride;
+  if (originalOverride === undefined) delete process.env.HTMLCRAFT_CHROMIUM;
+  else process.env.HTMLCRAFT_CHROMIUM = originalOverride;
   if (server) {
     server.closeAllConnections();
     await new Promise<void>((resolve, reject) => server!.close(error => error ? reject(error) : resolve()));
@@ -135,21 +135,21 @@ async function serve(handler: RequestListener) {
 describe('Chromium discovery', () => {
   it('finds a real browser or reports the acceptance environment as blocked', async () => {
     const found = await findChromium();
-    expect(found, 'BLOCKED: install Chromium or set HTMLPPT_CHROMIUM; rendering acceptance cannot run').not.toBeNull();
+    expect(found, 'BLOCKED: install Chromium or set HTMLCRAFT_CHROMIUM; rendering acceptance cannot run').not.toBeNull();
     expect(found!.executablePath).toBeTruthy();
     expect(['env', 'chrome', 'edge', 'chromium']).toContain(found!.source);
-    expect(await findChromium({ ...process.env, HTMLPPT_CHROMIUM: found!.executablePath }))
+    expect(await findChromium({ ...process.env, HTMLCRAFT_CHROMIUM: found!.executablePath }))
       .toEqual({ executablePath: found!.executablePath, source: 'env' });
   });
 
   it('never falls through an authoritative missing, empty, or directory override', async () => {
     for (const override of [path.join(dir, 'missing-browser.exe'), '', dir]) {
-      process.env.HTMLPPT_CHROMIUM = override;
+      process.env.HTMLCRAFT_CHROMIUM = override;
       expect(await findChromium()).toBeNull();
       await expect(renderPdf({ html: twoSlides, width: 320, height: 180, outPath: path.join(dir, 'out.pdf') }))
         .rejects.toBeInstanceOf(RendererUnavailableError);
       await expect(renderPngs({ html: twoSlides, width: 320, height: 180, outDir: dir, basename: 'out' }))
-        .rejects.toThrow(/install.*HTMLPPT_CHROMIUM/i);
+        .rejects.toThrow(/install.*HTMLCRAFT_CHROMIUM/i);
     }
     expect(await readdir(dir)).toEqual([]);
   });

@@ -20,9 +20,9 @@ async function executable(file: string): Promise<boolean> {
 }
 
 export async function findChromium(env: NodeJS.ProcessEnv = process.env): Promise<ChromiumLocation | null> {
-  if (env.HTMLPPT_CHROMIUM !== undefined) {
-    return await executable(env.HTMLPPT_CHROMIUM)
-      ? { executablePath: path.resolve(env.HTMLPPT_CHROMIUM), source: 'env' }
+  if (env.HTMLCRAFT_CHROMIUM !== undefined) {
+    return await executable(env.HTMLCRAFT_CHROMIUM)
+      ? { executablePath: path.resolve(env.HTMLCRAFT_CHROMIUM), source: 'env' }
       : null;
   }
 

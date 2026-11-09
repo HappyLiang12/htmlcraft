@@ -91,12 +91,12 @@ export async function startCliHost(
   options: { home?: string } = {}
 ) {
   // Every E2E host gets its own credential store. Without a caller-supplied
-  // home, `open` would otherwise write into the real `~/.htmlppt/decks` and
+  // home, `open` would otherwise write into the real `~/.htmlcraft/decks` and
   // reuse a developer's token between runs, so the helper mints a fresh temp
-  // home. A caller that supplies `home` or an explicit `HTMLPPT_HOME` owns its
+  // home. A caller that supplies `home` or an explicit `HTMLCRAFT_HOME` owns its
   // lifecycle; the environment value wins the same way, so a caller that sets
   // it for the child keeps one registry across the host and its MCP client.
-  const suppliedHome = options.home ?? process.env.HTMLPPT_HOME;
+  const suppliedHome = options.home ?? process.env.HTMLCRAFT_HOME;
   const home =
     suppliedHome ?? (await mkdtemp(join(tmpdir(), 'htmlppt-e2e-home-')));
   const ownsHome = suppliedHome === undefined;
@@ -105,7 +105,7 @@ export async function startCliHost(
   const child = execa('node', [cliPath, 'open', file, '--no-browser'], {
     cwd,
     reject: false,
-    env: { ...process.env, HTMLPPT_HOME: home }
+    env: { ...process.env, HTMLCRAFT_HOME: home }
   });
 
   let buffer = '';
@@ -118,7 +118,7 @@ export async function startCliHost(
       );
       child.stdout?.on('data', (chunk: Buffer) => {
         buffer += chunk.toString();
-        const match = /HTMLPPT_URL=(\S+)/.exec(buffer);
+        const match = /HTMLCRAFT_URL=(\S+)/.exec(buffer);
         if (match?.[1]) {
           clearTimeout(timer);
           resolve(match[1]);

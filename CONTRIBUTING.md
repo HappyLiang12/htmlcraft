@@ -1,6 +1,6 @@
-# Contributing to htmlppt
+# Contributing to htmlcraft
 
-Thanks for helping improve htmlppt. The project is a TypeScript monorepo that
+Thanks for helping improve htmlcraft. The project is a TypeScript monorepo that
 turns a single HTML file into a presentable deck, a visual editing session, and
 clean exports. Changes should preserve that one-file contract.
 
@@ -13,7 +13,7 @@ vulnerabilities.
 - **Node.js 20 or newer** (the workspace engines field enforces this).
 - **Git** with worktree support.
 - **Google Chrome, Microsoft Edge, or Chromium** for PDF/PNG export. Set
-  `HTMLPPT_CHROMIUM` to an executable path if auto-discovery fails.
+  `HTMLCRAFT_CHROMIUM` to an executable path if auto-discovery fails.
 - **Playwright Chromium** for E2E tests:
 
   ```bash
@@ -54,13 +54,13 @@ contributor's branch.
 
    ```bash
    npm run build
-   npx htmlppt new deck.html --slides 2
-   npx htmlppt validate deck.html
-   npx htmlppt open deck.html --no-browser
+   npx htmlcraft new deck.html --slides 2
+   npx htmlcraft validate deck.html
+   npx htmlcraft open deck.html --no-browser
    ```
 
-   Open the printed `HTMLPPT_URL`, make a change, and confirm it is saved. Stop
-   the host with `npx htmlppt stop deck.html`.
+   Open the printed `HTMLCRAFT_URL`, make a change, and confirm it is saved. Stop
+   the host with `npx htmlcraft stop deck.html`.
 5. Run `npm run verify:fast` before committing. Run `npm run verify` before a
    local merge or pull request when E2E and packaging are relevant.
 
@@ -98,7 +98,7 @@ Three rules keep the shortcut honest:
   the number the CLI test is about to claim.
 
 For editor-only UI work, `npm run dev -w @htmlppt/editor` serves the Vite shell.
-It has no deck host behind it, so use the built CLI and `htmlppt open` for any
+It has no deck host behind it, so use the built CLI and `htmlcraft open` for any
 flow that needs loading, saving, live sync, or export.
 
 ## Test-driven development
@@ -129,7 +129,7 @@ Rules:
 | Unit | `npm run test:unit` | Core contract, mutations, charts, tables, editor state, geometry, history, shortcuts, live-sync decisions. Editor tests use jsdom. |
 | Integration | `npm run test:integration` | Builds first, then runs the renderer, host, MCP and CLI suites as four concurrent lanes (`scripts/run-integration.mjs`): real Chromium, the host over HTTP, MCP over stdio, and the CLI as a real process against real files. Every lane runs; a failing lane is named and still exits non-zero. |
 | E2E | `npm run test:e2e` | Builds first, then drives the editor and exported decks in Playwright Chromium. |
-| Package | `npm run test:package` | Builds, packs the `htmlppt` tarball, installs it in a temp project, and checks the installed bins, editor assets, skill, docs, host auth, `new`/`validate`/`open`/`stop`, and the MCP handshake. |
+| Package | `npm run test:package` | Builds, packs the `htmlcraft` tarball, installs it in a temp project, and checks the installed bins, editor assets, skill, docs, host auth, `new`/`validate`/`open`/`stop`, and the MCP handshake. |
 | Matrix | `npm run test:matrix` | Ensures feature ids in `docs/features.json` have tagged test coverage. |
 
 The aggregate gates are `npm run verify:fast` (lint, dependency boundaries,
@@ -213,7 +213,7 @@ Releases are manual and never run from a pull request:
 
 1. In repository settings, create the environment `npm-publish` and require at
    least one reviewer. Add `NPM_TOKEN` as an environment secret (preferred) or
-   repository secret: a granular token scoped to the `htmlppt` package with
+   repository secret: a granular token scoped to the `htmlcraft` package with
    publish permission, 2FA bypass, and a short expiry. Prefer npm trusted
    publishing once it is configured on npmjs.com; then delete the token and
    keep `id-token: write` for provenance.
@@ -233,9 +233,9 @@ release; a previous approval does not carry over.
   `docs/mcp.md`, or `docs/architecture.md`.
 - `docs/superpowers/` contains internal design and planning notes. It is not
   user documentation and should not be linked from release docs.
-- Agent-facing instructions live in `skills/htmlppt/SKILL.md`; keep them short
+- Agent-facing instructions live in `skills/htmlcraft/SKILL.md`; keep them short
   and consistent with the actual CLI and MCP surface. Contract and tool
-  reference files under `skills/htmlppt/references/` mirror code behavior and
+  reference files under `skills/htmlcraft/references/` mirror code behavior and
   should be changed only when that behavior changes.
 - Every command in the docs must exist in `package.json` or the CLI. Check
   relative links before committing.

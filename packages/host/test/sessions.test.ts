@@ -60,21 +60,21 @@ describe('session registry', () => {
   let originalHome: string | undefined;
 
   beforeEach(async () => {
-    originalHome = process.env.HTMLPPT_HOME;
+    originalHome = process.env.HTMLCRAFT_HOME;
     home = await mkdtemp(join(tmpdir(), 'htmlppt-home-'));
-    process.env.HTMLPPT_HOME = home;
+    process.env.HTMLCRAFT_HOME = home;
   });
 
   afterEach(async () => {
     if (originalHome === undefined) {
-      delete process.env.HTMLPPT_HOME;
+      delete process.env.HTMLCRAFT_HOME;
     } else {
-      process.env.HTMLPPT_HOME = originalHome;
+      process.env.HTMLCRAFT_HOME = originalHome;
     }
     await rm(home, { recursive: true, force: true });
   });
 
-  it('honors HTMLPPT_HOME and round-trips an entry with user-only modes', async () => {
+  it('honors HTMLCRAFT_HOME and round-trips an entry with user-only modes', async () => {
     const deckPath = join(home, 'deck.html');
     const entry = makeEntry(deckPath);
 
@@ -91,7 +91,7 @@ describe('session registry', () => {
   it.skipIf(process.platform === 'win32')(
     'tightens CLI session files and directories to 0600/0700',
     async () => {
-      // `htmlppt open` persists its session through writeSession. Windows ACLs
+      // `htmlcraft open` persists its session through writeSession. Windows ACLs
       // cannot express POSIX mode bits, so this assertion is POSIX-only.
       await mkdir(sessionsDirectory(), { recursive: true });
       await chmod(sessionsDirectory(), 0o777);
@@ -106,10 +106,10 @@ describe('session registry', () => {
     }
   );
 
-  it('falls back to ~/.htmlppt/sessions', () => {
-    delete process.env.HTMLPPT_HOME;
+  it('falls back to ~/.htmlcraft/sessions', () => {
+    delete process.env.HTMLCRAFT_HOME;
 
-    expect(sessionsDirectory()).toBe(join(homedir(), '.htmlppt', 'sessions'));
+    expect(sessionsDirectory()).toBe(join(homedir(), '.htmlcraft', 'sessions'));
   });
 
   it('derives a stable SHA-256 key from the resolved path', () => {
@@ -274,7 +274,7 @@ describe('session registry', () => {
   it('returns an empty list when the sessions location cannot be listed', async () => {
     const notADirectory = join(home, 'not-a-directory');
     await writeFile(notADirectory, 'x', 'utf8');
-    process.env.HTMLPPT_HOME = notADirectory;
+    process.env.HTMLCRAFT_HOME = notADirectory;
 
     await expect(listSessions()).resolves.toEqual([]);
   });

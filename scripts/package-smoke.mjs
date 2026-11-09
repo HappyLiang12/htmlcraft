@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Packaging smoke test: packs the real `htmlppt` tarball, installs it into an
+// Packaging smoke test: packs the real `htmlcraft` tarball, installs it into an
 // empty temporary project, and exercises the installed bins and assets.
 //
 // No global install, no workspace links, no mocks: every command below runs
@@ -241,13 +241,13 @@ async function main() {
 
     const childEnv = {
       ...process.env,
-      HTMLPPT_HOME: homeDir,
+      HTMLCRAFT_HOME: homeDir,
       // Force the packaged editor lookup; the temp project has no workspace.
-      HTMLPPT_EDITOR_DIR: undefined,
-      HTMLPPT_MCP_MODE: undefined
+      HTMLCRAFT_EDITOR_DIR: undefined,
+      HTMLCRAFT_MCP_MODE: undefined
     };
-    delete childEnv.HTMLPPT_EDITOR_DIR;
-    delete childEnv.HTMLPPT_MCP_MODE;
+    delete childEnv.HTMLCRAFT_EDITOR_DIR;
+    delete childEnv.HTMLCRAFT_MCP_MODE;
 
     console.log('1. packing packages/htmlppt');
     const packed = parsePackOutput(
@@ -263,7 +263,7 @@ async function main() {
     );
     const tarball = join(packDir, packed.filename);
     assert(existsSync(tarball), `npm pack did not create ${tarball}`);
-    assert(packed.name === 'htmlppt', `tarball name is ${packed.name}, expected htmlppt`);
+    assert(packed.name === 'htmlcraft', `tarball name is ${packed.name}, expected htmlcraft`);
     console.log(`  tarball ${packed.filename} (${packed.size} bytes, ${packed.entryCount} files)`);
 
     console.log('2. installing the tarball in an empty project');
@@ -289,24 +289,24 @@ async function main() {
     );
 
     console.log('3. checking installed package contents');
-    const installedDir = join(projectDir, 'node_modules', 'htmlppt');
+    const installedDir = join(projectDir, 'node_modules', 'htmlcraft');
     const installedManifestPath = join(installedDir, 'package.json');
     await assertExists(installedManifestPath, 'installed package.json');
     const installedManifest = JSON.parse(await readFile(installedManifestPath, 'utf8'));
-    assert(installedManifest.name === 'htmlppt', 'installed package is not named htmlppt');
-    assert(installedManifest.bin?.htmlppt, 'installed package has no htmlppt bin');
-    assert(installedManifest.bin?.['htmlppt-mcp'], 'installed package has no htmlppt-mcp bin');
+    assert(installedManifest.name === 'htmlcraft', 'installed package is not named htmlcraft');
+    assert(installedManifest.bin?.htmlcraft, 'installed package has no htmlcraft bin');
+    assert(installedManifest.bin?.['htmlcraft-mcp'], 'installed package has no htmlcraft-mcp bin');
     assert(
-      installedManifest.bin.htmlppt === 'dist/cli.js',
-      `htmlppt bin points at ${installedManifest.bin.htmlppt}`
+      installedManifest.bin.htmlcraft === 'dist/cli.js',
+      `htmlcraft bin points at ${installedManifest.bin.htmlcraft}`
     );
     assert(
-      installedManifest.bin['htmlppt-mcp'] === 'dist/mcp.js',
-      `htmlppt-mcp bin points at ${installedManifest.bin['htmlppt-mcp']}`
+      installedManifest.bin['htmlcraft-mcp'] === 'dist/mcp.js',
+      `htmlcraft-mcp bin points at ${installedManifest.bin['htmlcraft-mcp']}`
     );
 
-    const cliBin = join(installedDir, installedManifest.bin.htmlppt);
-    const mcpBin = join(installedDir, installedManifest.bin['htmlppt-mcp']);
+    const cliBin = join(installedDir, installedManifest.bin.htmlcraft);
+    const mcpBin = join(installedDir, installedManifest.bin['htmlcraft-mcp']);
     await assertExists(cliBin, 'installed CLI bin');
     await assertExists(mcpBin, 'installed MCP bin');
     await assertExists(join(installedDir, 'dist', 'editor', 'index.html'), 'packaged editor index.html');
@@ -367,45 +367,45 @@ async function main() {
         ...options
       });
 
-    console.log('4. running htmlppt --help');
-    const help = await cli('htmlppt --help', ['--help']);
-    assert(help.stdout.includes('Usage: htmlppt'), 'htmlppt --help did not print usage');
+    console.log('4. running htmlcraft --help');
+    const help = await cli('htmlcraft --help', ['--help']);
+    assert(help.stdout.includes('Usage: htmlcraft'), 'htmlcraft --help did not print usage');
     assert(help.stdout.includes('open [options] <file>'), 'help is missing the open command');
 
-    console.log('4b. running htmlppt --version');
-    const version = await cli('htmlppt --version', ['--version']);
+    console.log('4b. running htmlcraft --version');
+    const version = await cli('htmlcraft --version', ['--version']);
     assert(
       version.stdout.trim() === installedManifest.version,
-      `htmlppt --version printed ${JSON.stringify(version.stdout.trim())}, expected ${JSON.stringify(installedManifest.version)}`
+      `htmlcraft --version printed ${JSON.stringify(version.stdout.trim())}, expected ${JSON.stringify(installedManifest.version)}`
     );
 
-    console.log('5. running htmlppt new and validate');
-    const newDeck = await cli('htmlppt new', ['new', 'deck.html', '--slides', '2']);
+    console.log('5. running htmlcraft new and validate');
+    const newDeck = await cli('htmlcraft new', ['new', 'deck.html', '--slides', '2']);
     assert(newDeck.stdout.includes('Created deck.html'), 'new did not report the deck');
     const deckPath = join(projectDir, 'deck.html');
     await assertExists(deckPath, 'created deck');
     const deckHtml = await readFile(deckPath, 'utf8');
     assert(deckHtml.includes('data-ppt-deck'), 'created deck has no deck wrapper');
     assert(deckHtml.includes('data-ppt-runtime="1"'), 'created deck has no runtime');
-    const validation = await cli('htmlppt validate', ['validate', 'deck.html']);
+    const validation = await cli('htmlcraft validate', ['validate', 'deck.html']);
     assert(
       validation.stdout.includes('Deck is valid.'),
       `validate did not accept the deck:\n${validation.stdout}\n${validation.stderr}`
     );
 
-    console.log('6. running htmlppt open --no-browser and htmlppt stop');
+    console.log('6. running htmlcraft open --no-browser and htmlcraft stop');
     hostSession = new ProcessSession(
-      'htmlppt open',
+      'htmlcraft open',
       process.execPath,
       [cliBin, 'open', 'deck.html', '--no-browser'],
       { cwd: projectDir, env: childEnv }
     );
     const urlLine = await hostSession.waitForLine(
-      (line) => line.startsWith('HTMLPPT_URL='),
+      (line) => line.startsWith('HTMLCRAFT_URL='),
       HOST_START_TIMEOUT_MS,
       'the editor URL'
     );
-    const editorUrl = urlLine.slice('HTMLPPT_URL='.length);
+    const editorUrl = urlLine.slice('HTMLCRAFT_URL='.length);
     assert(/^http:\/\/127\.0\.0\.1:\d+\/\?token=/.test(editorUrl), `unexpected URL ${editorUrl}`);
     const editorOrigin = new URL(editorUrl).origin;
     const unauthenticated = await fetch(`${editorOrigin}/`, {
@@ -431,7 +431,7 @@ async function main() {
     );
     const setCookie = bootstrap.headers.get('set-cookie') ?? '';
     assert(
-      setCookie.startsWith('htmlppt_token='),
+      setCookie.startsWith('htmlcraft_token='),
       'editor bootstrap did not set the session cookie'
     );
     const cookie = setCookie.split(';')[0];
@@ -442,9 +442,9 @@ async function main() {
     assert(response.ok, `editor page returned ${response.status}`);
     const servedHtml = await response.text();
     assert(servedHtml.includes('<div id="root">'), 'host did not serve the packaged editor');
-    const stop = await cli('htmlppt stop', ['stop', 'deck.html']);
+    const stop = await cli('htmlcraft stop', ['stop', 'deck.html']);
     assert(stop.stdout.includes('Stopped editor'), 'stop did not report stopping the editor');
-    await hostSession.waitForClose(PROCESS_EXIT_TIMEOUT_MS, 'exit after htmlppt stop');
+    await hostSession.waitForClose(PROCESS_EXIT_TIMEOUT_MS, 'exit after htmlcraft stop');
     // Windows terminates SIGTERM with exit code 1, so assert that the process
     // and its socket are gone rather than a platform-specific exit code.
     await assertHostStopped(editorUrl, 5_000);
@@ -458,9 +458,9 @@ async function main() {
     );
     console.log('  editor host started, served the packaged editor, and stopped');
 
-    console.log('7. running the htmlppt-mcp initialize handshake');
+    console.log('7. running the htmlcraft-mcp initialize handshake');
     mcpSession = new ProcessSession(
-      'htmlppt-mcp',
+      'htmlcraft-mcp',
       process.execPath,
       [mcpBin],
       { cwd: projectDir, env: childEnv }
@@ -491,7 +491,7 @@ async function main() {
     const initialize = JSON.parse(initializeLine);
     assert(!initialize.error, `initialize failed: ${JSON.stringify(initialize.error)}`);
     assert(
-      initialize.result?.serverInfo?.name === 'htmlppt',
+      initialize.result?.serverInfo?.name === 'htmlcraft',
       `unexpected MCP server ${JSON.stringify(initialize.result?.serverInfo)}`
     );
     assert(
@@ -535,7 +535,7 @@ async function main() {
     console.log(`  initialize ok (protocol ${initialize.result.protocolVersion}, ${toolNames.length} tools)`);
 
     console.log(
-      `PACKAGE SMOKE PASS: htmlppt ${installedManifest.version} tarball installed and exercised in ${Date.now() - startedAt} ms.`
+      `PACKAGE SMOKE PASS: htmlcraft ${installedManifest.version} tarball installed and exercised in ${Date.now() - startedAt} ms.`
     );
   } finally {
     if (mcpSession) await mcpSession.stop();

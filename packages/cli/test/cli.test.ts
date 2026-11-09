@@ -43,7 +43,7 @@ function capture() {
   };
 }
 
-describe('htmlppt cli', () => {
+describe('htmlcraft cli', () => {
   it('creates a deck with slides and a runtime', async () => {
     const cwd = await makeTempDir('htmlppt-cli-');
     const output = capture();
@@ -187,7 +187,7 @@ describe('htmlppt cli', () => {
 
     expect(code).toBe(0);
     const exported = await readFile(join(cwd, 'out.html'), 'utf8');
-    expect(exported).toContain('<!-- Edited with htmlppt. Format: htmldeck/v1. -->');
+    expect(exported).toContain('<!-- Edited with htmlcraft. Format: htmldeck/v1. -->');
     expect(exported).not.toContain('contenteditable');
   });
 
@@ -273,9 +273,9 @@ describe('htmlppt cli', () => {
       const cwd = await makeTempDir('htmlppt-cli-');
       await runCli(['new', 'deck.html'], { cwd, ...capture().io });
       const source = await readFile(join(cwd, 'deck.html'));
-      const previous = process.env.HTMLPPT_CHROMIUM;
+      const previous = process.env.HTMLCRAFT_CHROMIUM;
       // A missing browser proves the refusal happens before rendering.
-      process.env.HTMLPPT_CHROMIUM = join(cwd, 'missing-browser.exe');
+      process.env.HTMLCRAFT_CHROMIUM = join(cwd, 'missing-browser.exe');
       try {
         const output = capture();
         const code = await runCli(
@@ -291,9 +291,9 @@ describe('htmlppt cli', () => {
         expect(await readFile(join(cwd, 'deck.html'))).toEqual(source);
       } finally {
         if (previous === undefined) {
-          delete process.env.HTMLPPT_CHROMIUM;
+          delete process.env.HTMLCRAFT_CHROMIUM;
         } else {
-          process.env.HTMLPPT_CHROMIUM = previous;
+          process.env.HTMLCRAFT_CHROMIUM = previous;
         }
       }
       expect((await readdir(cwd)).sort()).toEqual(['deck.html']);
@@ -418,8 +418,8 @@ describe('htmlppt cli', () => {
     async () => {
       const cwd = await makeTempDir('htmlppt-cli-');
       await runCli(['new', 'deck.html'], { cwd, ...capture().io });
-      const previous = process.env.HTMLPPT_CHROMIUM;
-      process.env.HTMLPPT_CHROMIUM = join(cwd, 'missing-browser.exe');
+      const previous = process.env.HTMLCRAFT_CHROMIUM;
+      process.env.HTMLCRAFT_CHROMIUM = join(cwd, 'missing-browser.exe');
       try {
         const output = capture();
         const code = await runCli(
@@ -428,12 +428,12 @@ describe('htmlppt cli', () => {
         );
         expect(code).toBe(1);
         expect(output.stderr.join('\n')).toContain('Chromium is unavailable');
-        expect(output.stderr.join('\n')).toContain('HTMLPPT_CHROMIUM');
+        expect(output.stderr.join('\n')).toContain('HTMLCRAFT_CHROMIUM');
       } finally {
         if (previous === undefined) {
-          delete process.env.HTMLPPT_CHROMIUM;
+          delete process.env.HTMLCRAFT_CHROMIUM;
         } else {
-          process.env.HTMLPPT_CHROMIUM = previous;
+          process.env.HTMLCRAFT_CHROMIUM = previous;
         }
       }
       expect(await readdir(cwd)).toEqual(['deck.html']);
@@ -514,7 +514,7 @@ describe('htmlppt cli', () => {
 
     expect(code).toBe(0);
     const exported = await readFile(join(cwd, 'deck.export.html'), 'utf8');
-    expect(exported).toContain('<!-- Edited with htmlppt. Format: htmldeck/v1. -->');
+    expect(exported).toContain('<!-- Edited with htmlcraft. Format: htmldeck/v1. -->');
   });
 
   it.each(['abc', '-1', '1.5', '70000'])(
@@ -546,9 +546,9 @@ describe('htmlppt cli', () => {
 
     expect(code).toBe(1);
     expect(output.stderr.join('\n')).toContain(
-      'Deck file not found: missing.html. Create one with "htmlppt new missing.html".'
+      'Deck file not found: missing.html. Create one with "htmlcraft new missing.html".'
     );
-    expect(output.stdout.join('\n')).not.toContain('HTMLPPT_URL=');
+    expect(output.stdout.join('\n')).not.toContain('HTMLCRAFT_URL=');
   });
 
   it('reports an occupied port with actionable guidance', async () => {
@@ -574,7 +574,7 @@ describe('htmlppt cli', () => {
       expect(output.stderr.join('\n')).toContain(
         `Port ${address.port} is already in use. Omit --port or choose another.`
       );
-      expect(output.stdout.join('\n')).not.toContain('HTMLPPT_URL=');
+      expect(output.stdout.join('\n')).not.toContain('HTMLCRAFT_URL=');
     } finally {
       await new Promise<void>((resolve, reject) => {
         probe.close((error) => (error ? reject(error) : resolve()));
@@ -594,7 +594,7 @@ describe('htmlppt cli', () => {
 
     expect(code).toBe(1);
     expect(output.stderr.join('\n')).toContain('Deck file could not be read');
-    expect(output.stdout.join('\n')).not.toContain('HTMLPPT_URL=');
+    expect(output.stdout.join('\n')).not.toContain('HTMLCRAFT_URL=');
   });
 
   describe('formatHostStartError', () => {
@@ -618,7 +618,7 @@ describe('htmlppt cli', () => {
       );
 
       expect(message).toBe(
-        `Deck file not found: ${deckPath}. Create one with "htmlppt new ${deckPath}".`
+        `Deck file not found: ${deckPath}. Create one with "htmlcraft new ${deckPath}".`
       );
     });
 
@@ -667,8 +667,8 @@ describe('htmlppt cli', () => {
     const cwd = await makeTempDir('htmlppt-cli-');
     const emptyEditorDir = await makeTempDir('htmlppt-editor-empty-');
     const output = capture();
-    const previous = process.env.HTMLPPT_EDITOR_DIR;
-    process.env.HTMLPPT_EDITOR_DIR = emptyEditorDir;
+    const previous = process.env.HTMLCRAFT_EDITOR_DIR;
+    process.env.HTMLCRAFT_EDITOR_DIR = emptyEditorDir;
 
     try {
       const code = await runCli(['open', 'deck.html', '--no-browser'], {
@@ -680,9 +680,9 @@ describe('htmlppt cli', () => {
       expect(output.stderr.join('\n')).toContain('Editor build not found');
     } finally {
       if (previous === undefined) {
-        delete process.env.HTMLPPT_EDITOR_DIR;
+        delete process.env.HTMLCRAFT_EDITOR_DIR;
       } else {
-        process.env.HTMLPPT_EDITOR_DIR = previous;
+        process.env.HTMLCRAFT_EDITOR_DIR = previous;
       }
     }
   });
@@ -714,8 +714,8 @@ async function createCliWorkspace(): Promise<CliWorkspace> {
 function cliEnvironment(workspace: CliWorkspace): NodeJS.ProcessEnv {
   return {
     ...process.env,
-    HTMLPPT_HOME: workspace.home,
-    HTMLPPT_EDITOR_DIR: workspace.editorDir
+    HTMLCRAFT_HOME: workspace.home,
+    HTMLCRAFT_EDITOR_DIR: workspace.editorDir
   };
 }
 
@@ -741,7 +741,7 @@ async function credentialFilePath(
 
 /**
  * Seeds a credential without touching the host module, whose store reads the
- * test runner's own `HTMLPPT_HOME` rather than the workspace one.
+ * test runner's own `HTMLCRAFT_HOME` rather than the workspace one.
  */
 async function writeStoredCredential(
   workspace: CliWorkspace,
@@ -1271,7 +1271,7 @@ async function writeStaleSession(
   return raw;
 }
 
-describe('htmlppt cli as a real process', () => {
+describe('htmlcraft cli as a real process', () => {
   beforeAll(async () => {
     await ensureBuiltWorkspaces();
   }, 180_000);
@@ -1288,7 +1288,7 @@ describe('htmlppt cli as a real process', () => {
         env: cliEnvironment(workspace)
       });
       processes.push(first);
-      const firstMatch = await first.waitForOutput(/HTMLPPT_URL=(\S+)\r?\n/);
+      const firstMatch = await first.waitForOutput(/HTMLCRAFT_URL=(\S+)\r?\n/);
       const url = new URL(firstMatch[1]);
       expect(url.protocol).toBe('http:');
       expect(url.hostname).toBe('127.0.0.1');
@@ -1318,7 +1318,7 @@ describe('htmlppt cli as a real process', () => {
         { cwd: workspace.cwd, env: cliEnvironment(workspace) }
       );
       processes.push(second);
-      const secondMatch = await second.waitForOutput(/HTMLPPT_URL=(\S+)\r?\n/);
+      const secondMatch = await second.waitForOutput(/HTMLCRAFT_URL=(\S+)\r?\n/);
       expect(secondMatch[1]).toBe(url.href);
       expect(await second.waitForExit(10_000)).toBe(0);
       expect(await sessionCount(workspace)).toBe(1);
@@ -1344,7 +1344,7 @@ describe('htmlppt cli as a real process', () => {
     let second: CliProcess | undefined;
 
     try {
-      const firstMatch = await first.waitForOutput(/HTMLPPT_URL=(\S+)\r?\n/);
+      const firstMatch = await first.waitForOutput(/HTMLCRAFT_URL=(\S+)\r?\n/);
       const firstUrl = new URL(firstMatch[1]);
 
       const stop = await runCliProcess(['stop', 'basic.deck.html'], {
@@ -1358,7 +1358,7 @@ describe('htmlppt cli as a real process', () => {
         cwd: workspace.cwd,
         env: cliEnvironment(workspace)
       });
-      const secondMatch = await second.waitForOutput(/HTMLPPT_URL=(\S+)\r?\n/);
+      const secondMatch = await second.waitForOutput(/HTMLCRAFT_URL=(\S+)\r?\n/);
       const secondUrl = new URL(secondMatch[1]);
 
       expect(secondUrl.port).toBe(firstUrl.port);
@@ -1383,7 +1383,7 @@ describe('htmlppt cli as a real process', () => {
     });
 
     try {
-      const match = await open.waitForOutput(/HTMLPPT_URL=(\S+)\r?\n/);
+      const match = await open.waitForOutput(/HTMLCRAFT_URL=(\S+)\r?\n/);
       const url = new URL(match[1]);
       // Positive control: open records the identity it printed, so a later
       // difference proves the stop rotated it.
@@ -1437,7 +1437,7 @@ describe('htmlppt cli as a real process', () => {
     });
 
     try {
-      await open.waitForOutput(/HTMLPPT_URL=(\S+)\r?\n/);
+      await open.waitForOutput(/HTMLCRAFT_URL=(\S+)\r?\n/);
 
       const stop = await runCliProcess(['stop', 'basic.deck.html'], {
         cwd: workspace.cwd,
@@ -1476,7 +1476,7 @@ describe('htmlppt cli as a real process', () => {
       let reopened: CliProcess | undefined;
 
       try {
-        const match = await open.waitForOutput(/HTMLPPT_URL=(\S+)\r?\n/);
+        const match = await open.waitForOutput(/HTMLCRAFT_URL=(\S+)\r?\n/);
         const url = new URL(match[1]);
         const original = await readFile(credentialPath, 'utf8');
         const before = JSON.parse(original) as {
@@ -1538,7 +1538,7 @@ describe('htmlppt cli as a real process', () => {
           env: cliEnvironment(workspace)
         });
         const reopenedMatch = await reopened.waitForOutput(
-          /HTMLPPT_URL=(\S+)\r?\n/
+          /HTMLCRAFT_URL=(\S+)\r?\n/
         );
         const reopenedUrl = new URL(reopenedMatch[1]);
         expect(reopenedUrl.searchParams.get('token')).not.toBe(before.token);
@@ -1621,11 +1621,11 @@ describe('htmlppt cli as a real process', () => {
     let second: CliProcess | undefined;
 
     try {
-      const firstMatch = await first.waitForOutput(/HTMLPPT_URL=(\S+)\r?\n/);
+      const firstMatch = await first.waitForOutput(/HTMLCRAFT_URL=(\S+)\r?\n/);
       const firstUrl = new URL(firstMatch[1]);
       expect(firstUrl.searchParams.get('token')).toBeTruthy();
 
-      // Simulate an editor that went away without `htmlppt stop`, so the next
+      // Simulate an editor that went away without `htmlcraft stop`, so the next
       // open has to read the token back from the credential store.
       const exited = new Promise<void>((resolve) => {
         first.child.once('close', () => resolve());
@@ -1637,7 +1637,7 @@ describe('htmlppt cli as a real process', () => {
         cwd: workspace.cwd,
         env: cliEnvironment(workspace)
       });
-      const secondMatch = await second.waitForOutput(/HTMLPPT_URL=(\S+)\r?\n/);
+      const secondMatch = await second.waitForOutput(/HTMLCRAFT_URL=(\S+)\r?\n/);
       const secondUrl = new URL(secondMatch[1]);
 
       expect(secondUrl.searchParams.get('token')).toBe(
@@ -1661,7 +1661,7 @@ describe('htmlppt cli as a real process', () => {
     let second: CliProcess | undefined;
 
     try {
-      const firstMatch = await first.waitForOutput(/HTMLPPT_URL=(\S+)\r?\n/);
+      const firstMatch = await first.waitForOutput(/HTMLCRAFT_URL=(\S+)\r?\n/);
       const firstUrl = new URL(firstMatch[1]);
       const credentialPath = join(
         workspace.home,
@@ -1679,7 +1679,7 @@ describe('htmlppt cli as a real process', () => {
         cwd: workspace.cwd,
         env: cliEnvironment(workspace)
       });
-      const secondMatch = await second.waitForOutput(/HTMLPPT_URL=(\S+)\r?\n/);
+      const secondMatch = await second.waitForOutput(/HTMLCRAFT_URL=(\S+)\r?\n/);
       expect(secondMatch[1]).toBe(firstUrl.href);
       expect(await second.waitForExit(10_000)).toBe(0);
 
@@ -1707,7 +1707,7 @@ describe('htmlppt cli as a real process', () => {
     let reopened: CliProcess | undefined;
 
     try {
-      const firstMatch = await first.waitForOutput(/HTMLPPT_URL=(\S+)\r?\n/);
+      const firstMatch = await first.waitForOutput(/HTMLCRAFT_URL=(\S+)\r?\n/);
       const liveUrl = new URL(firstMatch[1]);
       const credentialPath = await credentialFilePath(workspace, deckPath);
       const seededAt = '2026-10-01T00:00:00.000Z';
@@ -1725,7 +1725,7 @@ describe('htmlppt cli as a real process', () => {
         env: cliEnvironment(workspace)
       });
       const adoptedMatch = await adopted.waitForOutput(
-        /HTMLPPT_URL=(\S+)\r?\n/
+        /HTMLCRAFT_URL=(\S+)\r?\n/
       );
       expect(adoptedMatch[1]).toBe(liveUrl.href);
       expect(await adopted.waitForExit(10_000)).toBe(0);
@@ -1751,7 +1751,7 @@ describe('htmlppt cli as a real process', () => {
         env: cliEnvironment(workspace)
       });
       const reopenedMatch = await reopened.waitForOutput(
-        /HTMLPPT_URL=(\S+)\r?\n/
+        /HTMLCRAFT_URL=(\S+)\r?\n/
       );
       const reopenedUrl = new URL(reopenedMatch[1]);
       expect(reopenedUrl.searchParams.get('token')).toBe(
@@ -1780,7 +1780,7 @@ describe('htmlppt cli as a real process', () => {
     let reopened: CliProcess | undefined;
 
     try {
-      const match = await open.waitForOutput(/HTMLPPT_URL=(\S+)\r?\n/);
+      const match = await open.waitForOutput(/HTMLCRAFT_URL=(\S+)\r?\n/);
       const liveUrl = new URL(match[1]);
       const firstCredentialPath = await credentialFilePath(
         workspace,
@@ -1830,7 +1830,7 @@ describe('htmlppt cli as a real process', () => {
         { cwd: workspace.cwd, env: cliEnvironment(workspace) }
       );
       const reopenedMatch = await reopened.waitForOutput(
-        /HTMLPPT_URL=(\S+)\r?\n/
+        /HTMLCRAFT_URL=(\S+)\r?\n/
       );
       const reopenedUrl = new URL(reopenedMatch[1]);
       expect(reopenedUrl.searchParams.get('token')).not.toBe(token);
@@ -1876,7 +1876,7 @@ describe('htmlppt cli as a real process', () => {
     const probe = createServer();
 
     try {
-      const firstMatch = await first.waitForOutput(/HTMLPPT_URL=(\S+)\r?\n/);
+      const firstMatch = await first.waitForOutput(/HTMLCRAFT_URL=(\S+)\r?\n/);
       const firstUrl = new URL(firstMatch[1]);
 
       const stop = await runCliProcess(['stop', 'basic.deck.html'], {
@@ -1906,7 +1906,7 @@ describe('htmlppt cli as a real process', () => {
         cwd: workspace.cwd,
         env: cliEnvironment(workspace)
       });
-      const secondMatch = await second.waitForOutput(/HTMLPPT_URL=(\S+)\r?\n/);
+      const secondMatch = await second.waitForOutput(/HTMLCRAFT_URL=(\S+)\r?\n/);
       const secondUrl = new URL(secondMatch[1]);
 
       const warning = `Port ${firstUrl.port} is in use; starting basic.deck.html on a new port. Existing bookmarks for this deck will stop working.`;
@@ -1961,7 +1961,7 @@ describe('htmlppt cli as a real process', () => {
         cwd: workspace.cwd,
         env: cliEnvironment(workspace)
       });
-      const match = await open.waitForOutput(/HTMLPPT_URL=(\S+)\r?\n/);
+      const match = await open.waitForOutput(/HTMLCRAFT_URL=(\S+)\r?\n/);
       const url = new URL(match[1]);
 
       expect(url.port).toBe(String(held.port));
@@ -1999,7 +1999,7 @@ describe('htmlppt cli as a real process', () => {
     );
 
     try {
-      const match = await open.waitForOutput(/HTMLPPT_URL=(\S+)\r?\n/);
+      const match = await open.waitForOutput(/HTMLCRAFT_URL=(\S+)\r?\n/);
       const url = new URL(match[1]);
       expect(url.port).toBe(String(requestedPort));
 
@@ -2043,7 +2043,7 @@ describe('htmlppt cli as a real process', () => {
     );
 
     try {
-      const match = await open.waitForOutput(/HTMLPPT_URL=(\S+)\r?\n/);
+      const match = await open.waitForOutput(/HTMLCRAFT_URL=(\S+)\r?\n/);
       const url = new URL(match[1]);
       expect(url.port).not.toBe(String(storedPort));
       expect(open.stderr).not.toContain('is in use');
@@ -2071,7 +2071,7 @@ describe('htmlppt cli as a real process', () => {
     let stopProcess: CliProcess | undefined;
 
     try {
-      await open.waitForOutput(/HTMLPPT_URL=(\S+)\r?\n/);
+      await open.waitForOutput(/HTMLCRAFT_URL=(\S+)\r?\n/);
       const entry = JSON.parse(
         await readFile(sessionFilePath(workspace, deckPath), 'utf8')
       ) as { pid: number };
@@ -2099,7 +2099,7 @@ describe('htmlppt cli as a real process', () => {
       });
       expect(second.code).toBe(1);
       expect(second.stderr).toContain('No live editor session');
-      expect(second.stderr).toContain('htmlppt open');
+      expect(second.stderr).toContain('htmlcraft open');
     } finally {
       open.kill();
       stopProcess?.kill();
@@ -2116,7 +2116,7 @@ describe('htmlppt cli as a real process', () => {
     });
 
     try {
-      await open.waitForOutput(/HTMLPPT_URL=(\S+)\r?\n/);
+      await open.waitForOutput(/HTMLCRAFT_URL=(\S+)\r?\n/);
       await rm(deckPath);
 
       const stop = await runCliProcess(['stop', 'basic.deck.html'], {
@@ -2374,9 +2374,9 @@ describe('htmlppt cli as a real process', () => {
         'A registered editor for this deck could not be verified'
       );
       expect(stop.stderr).toContain(
-        'Retry "htmlppt stop <file>" when it responds.'
+        'Retry "htmlcraft stop <file>" when it responds.'
       );
-      expect(stop.stderr).not.toContain('htmlppt stop --all');
+      expect(stop.stderr).not.toContain('htmlcraft stop --all');
       expect(stop.stderr).not.toContain('basic.deck.html');
       expect(stop.stderr).not.toContain('Start one with');
       expect(stop.stderr).not.toContain('Stopped editor');
@@ -2414,7 +2414,7 @@ describe('htmlppt cli as a real process', () => {
 
     try {
       for (const open of opens) {
-        const match = await open.waitForOutput(/HTMLPPT_URL=(\S+)\r?\n/);
+        const match = await open.waitForOutput(/HTMLCRAFT_URL=(\S+)\r?\n/);
         urls.push(new URL(match[1]));
       }
       expect(await sessionCount(workspace)).toBe(2);
@@ -2503,7 +2503,7 @@ describe('htmlppt cli as a real process', () => {
     });
 
     try {
-      const match = await open.waitForOutput(/HTMLPPT_URL=(\S+)\r?\n/);
+      const match = await open.waitForOutput(/HTMLCRAFT_URL=(\S+)\r?\n/);
       const url = new URL(match[1]);
       expect(url.hostname).toBe('127.0.0.1');
       const pid = open.child.pid;
@@ -2550,8 +2550,8 @@ describe('htmlppt cli as a real process', () => {
       expect(open.stderr).toContain(
         'appears to be running but is not responding'
       );
-      expect(open.stderr).toContain('htmlppt stop');
-      expect(open.stdout).not.toContain('HTMLPPT_URL=');
+      expect(open.stderr).toContain('htmlcraft stop');
+      expect(open.stdout).not.toContain('HTMLCRAFT_URL=');
       expect(await readFile(sessionFilePath(workspace, deckPath), 'utf8')).toBe(
         raw
       );
@@ -2600,8 +2600,8 @@ describe('htmlppt cli as a real process', () => {
       expect(open.stderr).toContain(
         'appears to be running but is not responding'
       );
-      expect(open.stderr).toContain('htmlppt stop');
-      expect(open.stdout).not.toContain('HTMLPPT_URL=');
+      expect(open.stderr).toContain('htmlcraft stop');
+      expect(open.stdout).not.toContain('HTMLCRAFT_URL=');
       expect(
         await readFile(
           sessionFilePath(workspace, join(aliasDir, 'basic.deck.html')),
@@ -2647,7 +2647,7 @@ describe('htmlppt cli as a real process', () => {
         cwd: workspace.cwd,
         env: cliEnvironment(workspace)
       });
-      const match = await open.waitForOutput(/HTMLPPT_URL=(\S+)\r?\n/);
+      const match = await open.waitForOutput(/HTMLCRAFT_URL=(\S+)\r?\n/);
       const url = new URL(match[1]);
 
       await vi.waitFor(
@@ -2664,7 +2664,7 @@ describe('htmlppt cli as a real process', () => {
       );
       // `open` owns its stdout contract: one URL for the new host and no
       // `stop` confirmation line from the internal eviction.
-      expect(open.stdout.match(/HTMLPPT_URL=/g)).toHaveLength(1);
+      expect(open.stdout.match(/HTMLCRAFT_URL=/g)).toHaveLength(1);
       expect(open.stdout).not.toContain('Stopped editor');
       // The replacement keeps the deck's sticky address but starts a new host
       // with the credential the stop rotated.
@@ -2698,7 +2698,7 @@ describe('htmlppt cli as a real process', () => {
         `http://127.0.0.1:${host.port}/d/basic.deck.html`,
         {
           headers: {
-            cookie: `htmlppt_token=${url.searchParams.get('token')}`
+            cookie: `htmlcraft_token=${url.searchParams.get('token')}`
           }
         }
       );
@@ -2746,7 +2746,7 @@ describe('htmlppt cli as a real process', () => {
         cwd: workspace.cwd,
         env: cliEnvironment(workspace)
       });
-      const match = await open.waitForOutput(/HTMLPPT_URL=(\S+)\r?\n/);
+      const match = await open.waitForOutput(/HTMLCRAFT_URL=(\S+)\r?\n/);
       const code = await open.waitForExit(10_000);
 
       expect(code).toBe(0);
@@ -2755,7 +2755,7 @@ describe('htmlppt cli as a real process', () => {
       const url = new URL(match[1]);
       expect(url.port).toBe(String(host.port));
       expect(url.searchParams.get('token')).toBe('stale-token');
-      expect(open.stdout.match(/HTMLPPT_URL=/g)).toHaveLength(1);
+      expect(open.stdout.match(/HTMLCRAFT_URL=/g)).toHaveLength(1);
       expect(open.stderr).not.toContain('does not serve the editor');
       expect(() => process.kill(host.pid, 0)).not.toThrow();
       expect(await readFile(sessionFilePath(workspace, deckPath), 'utf8')).toBe(
@@ -2821,7 +2821,7 @@ describe('htmlppt cli as a real process', () => {
       expect(open.stderr).toContain(
         'appears to be running but is not responding'
       );
-      expect(open.stdout).not.toContain('HTMLPPT_URL=');
+      expect(open.stdout).not.toContain('HTMLCRAFT_URL=');
       // Positive control: the entry names a live pid, so the refusal is what
       // kept it, not a dead-process prune.
       expect(() => process.kill(host.pid, 0)).not.toThrow();
@@ -2859,7 +2859,7 @@ describe('htmlppt cli as a real process', () => {
       expect(open.stderr).toContain(
         'appears to be running but is not responding'
       );
-      expect(open.stdout).not.toContain('HTMLPPT_URL=');
+      expect(open.stdout).not.toContain('HTMLCRAFT_URL=');
       // Positive control: the entry names a live pid, so the refusal is what
       // kept it, not a dead-process prune.
       expect(() => process.kill(host.pid, 0)).not.toThrow();
@@ -2911,7 +2911,7 @@ describe('htmlppt cli as a real process', () => {
         cwd: workspace.cwd,
         env: cliEnvironment(workspace)
       });
-      const match = await open.waitForOutput(/HTMLPPT_URL=(\S+)\r?\n/);
+      const match = await open.waitForOutput(/HTMLCRAFT_URL=(\S+)\r?\n/);
       const url = new URL(match[1]);
 
       await vi.waitFor(
@@ -2986,7 +2986,7 @@ describe('htmlppt cli as a real process', () => {
     let stop: CliProcess | undefined;
 
     try {
-      await open.waitForOutput(/HTMLPPT_URL=(\S+)\r?\n/);
+      await open.waitForOutput(/HTMLCRAFT_URL=(\S+)\r?\n/);
       await writeStaleSession(workspace, staleDeck, {
         pid,
         port: stalePort
@@ -3147,7 +3147,7 @@ describe('htmlppt cli as a real process', () => {
     let stop: CliProcess | undefined;
 
     try {
-      const match = await open.waitForOutput(/HTMLPPT_URL=(\S+)\r?\n/);
+      const match = await open.waitForOutput(/HTMLCRAFT_URL=(\S+)\r?\n/);
       const liveUrl = new URL(match[1]);
       const liveCredentialPath = await credentialFilePath(workspace, liveDeck);
       const liveBefore = JSON.parse(
@@ -3326,7 +3326,7 @@ describe('htmlppt cli as a real process', () => {
       env: cliEnvironment(workspace)
     });
     expect(help.code).toBe(0);
-    expect(help.stdout).toContain('Usage: htmlppt mcp');
+    expect(help.stdout).toContain('Usage: htmlcraft mcp');
     expect(help.stdout).toContain('MCP');
 
     const server = new CliProcess(['mcp'], {
@@ -3348,7 +3348,7 @@ describe('htmlppt cli as a real process', () => {
       );
       const response = await server.waitForJsonRpc(1);
       expect(response.result).toMatchObject({
-        serverInfo: { name: 'htmlppt', version: '0.1.0' }
+        serverInfo: { name: 'htmlcraft', version: '0.1.0' }
       });
       server.child.stdin.end();
       expect(await server.waitForExit(10_000)).toBe(0);

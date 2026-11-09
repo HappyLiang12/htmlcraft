@@ -217,7 +217,7 @@ const laneBlockFloor = 20000;
 let laneCursor = 0;
 
 function lanePortBase(): number {
-  const declared = Number.parseInt(process.env.HTMLPPT_LANE ?? '', 10);
+  const declared = Number.parseInt(process.env.HTMLCRAFT_LANE ?? '', 10);
   const index = Number.isFinite(declared) ? declared : process.pid;
   return laneBlockFloor + (index % 64) * laneBlockSize;
 }

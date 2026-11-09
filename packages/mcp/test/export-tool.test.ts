@@ -74,7 +74,7 @@ let previousMode: string | undefined;
 let previousChromium: string | undefined;
 
 async function setup(options: SetupOptions = {}): Promise<Context> {
-  const dir = await makeTempDir('htmlppt-mcp-export-');
+  const dir = await makeTempDir('htmlcraft-mcp-export-');
   const deckDir = options.deckDir ? path.join(dir, options.deckDir) : dir;
   await mkdir(deckDir, { recursive: true });
   const deckPath = path.join(deckDir, 'deck.html');
@@ -124,10 +124,10 @@ function expectSuccess(result: ToolResult): void {
 }
 
 beforeEach(() => {
-  previousHome = process.env.HTMLPPT_HOME;
-  previousMode = process.env.HTMLPPT_MCP_MODE;
-  previousChromium = process.env.HTMLPPT_CHROMIUM;
-  delete process.env.HTMLPPT_MCP_MODE;
+  previousHome = process.env.HTMLCRAFT_HOME;
+  previousMode = process.env.HTMLCRAFT_MCP_MODE;
+  previousChromium = process.env.HTMLCRAFT_CHROMIUM;
+  delete process.env.HTMLCRAFT_MCP_MODE;
 });
 
 afterEach(async () => {
@@ -136,12 +136,12 @@ afterEach(async () => {
   try {
     await ctx?.close();
   } finally {
-    if (previousHome === undefined) delete process.env.HTMLPPT_HOME;
-    else process.env.HTMLPPT_HOME = previousHome;
-    if (previousMode === undefined) delete process.env.HTMLPPT_MCP_MODE;
-    else process.env.HTMLPPT_MCP_MODE = previousMode;
-    if (previousChromium === undefined) delete process.env.HTMLPPT_CHROMIUM;
-    else process.env.HTMLPPT_CHROMIUM = previousChromium;
+    if (previousHome === undefined) delete process.env.HTMLCRAFT_HOME;
+    else process.env.HTMLCRAFT_HOME = previousHome;
+    if (previousMode === undefined) delete process.env.HTMLCRAFT_MCP_MODE;
+    else process.env.HTMLCRAFT_MCP_MODE = previousMode;
+    if (previousChromium === undefined) delete process.env.HTMLCRAFT_CHROMIUM;
+    else process.env.HTMLCRAFT_CHROMIUM = previousChromium;
     if (ctx) {
       await rm(ctx.dir, { recursive: true, force: true });
     }
@@ -287,7 +287,7 @@ describe('export_deck tool', () => {
     });
     expect(samePath(String(payload(result).outputPath), outputPath)).toBe(true);
     expect(await readFile(outputPath, 'utf8')).toContain(
-      '<!-- Edited with htmlppt.'
+      '<!-- Edited with htmlcraft.'
     );
     await expect(
       readFile(path.join(ctx.dir, 'client', 'exports', 'deck.export.html'))
@@ -316,7 +316,7 @@ describe('export_deck tool', () => {
     );
     expect(samePath(String(payload(result).outputPath), outputPath)).toBe(true);
     expect(await readFile(outputPath, 'utf8')).toContain(
-      '<!-- Edited with htmlppt.'
+      '<!-- Edited with htmlcraft.'
     );
   });
 
@@ -324,7 +324,7 @@ describe('export_deck tool', () => {
     'reports an unavailable renderer with instructions',
     async () => {
       const ctx = await setup();
-      process.env.HTMLPPT_CHROMIUM = path.join(
+      process.env.HTMLCRAFT_CHROMIUM = path.join(
         ctx.dir,
         'missing-browser.exe'
       );
@@ -337,7 +337,7 @@ describe('export_deck tool', () => {
       expect(result.isError).toBe(true);
       const body = payload(result);
       expect(body.code).toBe('renderer-unavailable');
-      expect(String(body.message)).toContain('HTMLPPT_CHROMIUM');
+      expect(String(body.message)).toContain('HTMLCRAFT_CHROMIUM');
     },
     30_000
   );
@@ -347,7 +347,7 @@ describe('export_deck tool', () => {
     async () => {
       const ctx = await setup({ deckDir: 'decks', cwd: 'client' });
       const home = path.join(ctx.dir, 'home');
-      process.env.HTMLPPT_HOME = home;
+      process.env.HTMLCRAFT_HOME = home;
       await mkdir(home, { recursive: true });
       const editorDir = path.join(ctx.dir, 'editor');
       await mkdir(editorDir, { recursive: true });
@@ -440,7 +440,7 @@ describe('export_deck tool', () => {
         ).toBe(true);
 
         // Host failures surface without the bearer token or host URL.
-        process.env.HTMLPPT_CHROMIUM = path.join(
+        process.env.HTMLCRAFT_CHROMIUM = path.join(
           ctx.dir,
           'missing-browser.exe'
         );

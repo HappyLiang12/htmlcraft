@@ -43,7 +43,7 @@ export function createDeckHtml(options: CreateDeckOptions = {}): string {
     return `
     <section class="slide" data-slide-id="s${index + 1}" data-width="${width}" data-height="${height}">
       <div class="slide-inner">
-        <p class="kicker">htmlppt</p>
+        <p class="kicker">htmlcraft</p>
         <h1 data-ppt-el="e${index + 1}">${escapeHtml(heading)}</h1>
       </div>
     </section>`;

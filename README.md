@@ -1,4 +1,4 @@
-# htmlppt
+# htmlcraft
 
 A local visual editor and CLI/MCP toolchain for single-file HTML presentations.
 
@@ -8,7 +8,7 @@ local editor, adjusts layout and copy, and exports standalone HTML, PDF, or one
 PNG per slide. There is no project file, build step, or upload; the HTML file
 is the source of truth.
 
-![htmlppt editor](https://raw.githubusercontent.com/HappyLiang12/htmlppt/main/docs/images/editor.png)
+![htmlcraft editor](https://raw.githubusercontent.com/HappyLiang12/htmlppt/main/docs/images/editor.png)
 
 ## Install
 
@@ -16,25 +16,25 @@ Requires Node.js 20 or newer. PDF and PNG export need a local Chrome, Edge, or
 Chromium build.
 
 ```bash
-npm install -g htmlppt
-npx -y htmlppt --help
+npm install -g htmlcraft
+npx -y htmlcraft --help
 ```
 
 From a source checkout, run `npm ci && npm run build` first, then use the same
-commands through `npx htmlppt`.
+commands through `npx htmlcraft`.
 
 ## Quick start
 
 ```bash
-npx htmlppt new deck.html --title "Quarterly review" --slides 3
-npx htmlppt validate deck.html
-npx htmlppt open deck.html
-npx htmlppt stop deck.html
+npx htmlcraft new deck.html --title "Quarterly review" --slides 3
+npx htmlcraft validate deck.html
+npx htmlcraft open deck.html
+npx htmlcraft stop deck.html
 ```
 
 `new` refuses to overwrite an existing file; pass `--force` to replace it.
 `--size 1600x900` sets the canvas. `open` prints
-`HTMLPPT_URL=http://127.0.0.1:<port>/?token=...` and opens your browser;
+`HTMLCRAFT_URL=http://127.0.0.1:<port>/?token=...` and opens your browser;
 `--no-browser` prints the URL only.
 
 The token is exchanged for an HttpOnly, `SameSite=Strict` session cookie and
@@ -54,23 +54,23 @@ Add the stdio server to an MCP client:
 ```json
 {
   "mcpServers": {
-    "htmlppt": {
+    "htmlcraft": {
       "command": "npx",
-      "args": ["-y", "htmlppt", "mcp"]
+      "args": ["-y", "htmlcraft", "mcp"]
     }
   }
 }
 ```
 
-With a global install, `"command": "htmlppt-mcp"` works too. The server exposes
-25 tools and the `htmlppt://contract`, `htmlppt://authoring`, and
-`htmlppt://example` resources. See [docs/mcp.md](docs/mcp.md) for the full
+With a global install, `"command": "htmlcraft-mcp"` works too. The server exposes
+25 tools and the `htmlcraft://contract`, `htmlcraft://authoring`, and
+`htmlcraft://example` resources. See [docs/mcp.md](docs/mcp.md) for the full
 surface.
 
 Agent loop:
 
-1. Read `get_deck_contract` or the `htmlppt://contract` and
-   `htmlppt://authoring` resources.
+1. Read `get_deck_contract` or the `htmlcraft://contract` and
+   `htmlcraft://authoring` resources.
 2. Create a deck with `create_deck`, or inspect an existing one with
    `get_outline`, `read_slide`, and `get_element`. Do not guess ids.
 3. Mutate one change per call (`set_text`, `set_style`, `add_slide`,
@@ -169,20 +169,20 @@ validation, round-trip rules, and export guarantees.
 
 | Command | Purpose |
 | --- | --- |
-| `htmlppt new <file>` | Create a deck. `--force` replaces an existing file. |
-| `htmlppt validate <file>` | Exit 0 when valid, 1 when invalid. `--json` for diagnostics. |
-| `htmlppt outline <file>` | Summarize slides and objects. `--json` for machines. |
-| `htmlppt open <file>` | Start or reuse the local editor host. `--no-browser`, `--port 0`. |
-| `htmlppt stop <file>` | Stop one host; `--all` prunes dead sessions. |
-| `htmlppt export <file>` | Export HTML, PDF, or PNG. |
-| `htmlppt mcp` | Run the same stdio server as `htmlppt-mcp`. |
+| `htmlcraft new <file>` | Create a deck. `--force` replaces an existing file. |
+| `htmlcraft validate <file>` | Exit 0 when valid, 1 when invalid. `--json` for diagnostics. |
+| `htmlcraft outline <file>` | Summarize slides and objects. `--json` for machines. |
+| `htmlcraft open <file>` | Start or reuse the local editor host. `--no-browser`, `--port 0`. |
+| `htmlcraft stop <file>` | Stop one host; `--all` prunes dead sessions. |
+| `htmlcraft export <file>` | Export HTML, PDF, or PNG. |
+| `htmlcraft mcp` | Run the same stdio server as `htmlcraft-mcp`. |
 
 ## Export
 
 ```bash
-npx htmlppt export deck.html --format html
-npx htmlppt export deck.html --format pdf
-npx htmlppt export deck.html --format png --out dist/png
+npx htmlcraft export deck.html --format html
+npx htmlcraft export deck.html --format pdf
+npx htmlcraft export deck.html --format png --out dist/png
 ```
 
 | Format | Output | Notes |
@@ -191,7 +191,7 @@ npx htmlppt export deck.html --format png --out dist/png
 | PDF | `<name>.pdf` | One page per slide at the first slide's canvas size, backgrounds included. |
 | PNG | `<name>-s1.png`, ... | One image per slide at 2x device scale. |
 
-PDF and PNG use a system Chrome, Edge, or Chromium; set `HTMLPPT_CHROMIUM` to
+PDF and PNG use a system Chrome, Edge, or Chromium; set `HTMLCRAFT_CHROMIUM` to
 an executable path if discovery fails. No browser is bundled. `--out` is a file
 for HTML/PDF and a directory for PNG. Host and MCP exports stay inside the deck
 directory, including through symlinks; the CLI refuses to overwrite the source
@@ -239,7 +239,7 @@ npm run verify                    # everything, including E2E and package smoke
 
 | Command | Purpose |
 | --- | --- |
-| `npm run build` | Build all workspace packages, the editor, and the `htmlppt` bundle. |
+| `npm run build` | Build all workspace packages, the editor, and the `htmlcraft` bundle. |
 | `npm run test:unit` | Core and editor unit tests. |
 | `npm run test:integration` | Build, then exercise renderer, host, MCP, and CLI as real processes. |
 | `npm run test:e2e` | Build, then run Playwright Chromium tests. |
@@ -258,7 +258,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for worktrees, TDD, and publishing, and
 - [docs/architecture.md](docs/architecture.md) - packages, data flow, revisions,
   preview commits, presenter protocol, renderer pipeline.
 - [docs/testing.md](docs/testing.md) - test strategy and feature-matrix rules.
-- [skills/htmlppt/SKILL.md](skills/htmlppt/SKILL.md) - agent-facing skill.
+- [skills/htmlcraft/SKILL.md](skills/htmlcraft/SKILL.md) - agent-facing skill.
 
 ## License
 

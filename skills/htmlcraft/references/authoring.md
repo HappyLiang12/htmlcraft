@@ -1,4 +1,4 @@
-# Authoring decks for the htmlppt editor and MCP server
+# Authoring decks for the htmlcraft editor and MCP server
 
 These notes cover how to write decks that stay pleasant to edit by hand, by an
 agent, and in the visual editor. The contract itself lives in
@@ -6,7 +6,7 @@ agent, and in the visual editor. The contract itself lives in
 
 ## Start from structure, then style
 
-1. Create the deck with `create_deck` or `htmlppt new`. Both produce a valid
+1. Create the deck with `create_deck` or `htmlcraft new`. Both produce a valid
    document with slide ids, the canvas size, and the real runtime.
 2. Add or replace content as top-level objects. Each object owns its position,
    size, and typography.
@@ -146,15 +146,15 @@ explicitly asks for that.
 
 ## Review and export
 
-- Use `open_editor` (MCP) or `htmlppt open <file>` (CLI) for human review. The
+- Use `open_editor` (MCP) or `htmlcraft open <file>` (CLI) for human review. The
   URL contains the deck's capability token; treat it as a secret. The token is
-  recorded per deck and reused by later opens until `htmlppt stop` rotates it;
+  recorded per deck and reused by later opens until `htmlcraft stop` rotates it;
   replacing a stale-build host rotates it too, because `open` stops the broken
   host first, so a URL bookmarked before the replacement needs the newly printed
   one. The first visit exchanges the token for a 30-day session cookie.
 - Re-read after a person edits in the editor, because their writes create new
   revisions.
-- Run `validate_deck` or `htmlppt validate` before exporting.
+- Run `validate_deck` or `htmlcraft validate` before exporting.
 - `export_deck` writes `<name>.export.html` for `format: "html"`, or a PDF /
   one PNG per slide for `pdf` / `png`. `outDir` resolves against the deck
   directory and must stay inside it.

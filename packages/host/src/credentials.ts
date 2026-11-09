@@ -12,11 +12,11 @@ export interface DeckCredential {
 }
 
 export function credentialsDirectory(): string {
-  const override = process.env.HTMLPPT_HOME;
+  const override = process.env.HTMLCRAFT_HOME;
   const base =
     override && override.length > 0
       ? path.resolve(override)
-      : path.join(homedir(), '.htmlppt');
+      : path.join(homedir(), '.htmlcraft');
   return path.join(base, 'decks');
 }
 

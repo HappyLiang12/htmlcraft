@@ -1,7 +1,7 @@
 import { RUNTIME_SOURCE } from '@htmlppt/runtime';
 
 const DOCTYPE = '<!doctype html>';
-const GENERATOR_COMMENT = '<!-- Edited with htmlppt. Format: htmldeck/v1. -->';
+const GENERATOR_COMMENT = '<!-- Edited with htmlcraft. Format: htmldeck/v1. -->';
 
 export function serializeDeck(doc: Document): string {
   return `${DOCTYPE}\n${doc.documentElement.outerHTML}`;

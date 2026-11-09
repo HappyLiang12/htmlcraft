@@ -64,13 +64,13 @@ const STICKY_PORT_RETRY_DELAY_MS = 100;
 
 /**
  * Resolves the editor build for both the workspace and the installed package.
- * `HTMLPPT_EDITOR_DIR` is an explicit override, so an invalid directory is
+ * `HTMLCRAFT_EDITOR_DIR` is an explicit override, so an invalid directory is
  * reported instead of silently falling back. Without an override, prefer the
  * package layout (`<package root>/dist/editor`, which is also the bundled
  * layout) and then the workspace (`packages/editor/dist`).
  */
 async function editorDir(): Promise<string> {
-  const override = process.env.HTMLPPT_EDITOR_DIR;
+  const override = process.env.HTMLCRAFT_EDITOR_DIR;
   if (override !== undefined && override.length > 0) {
     await requireEditorBuild(override);
     return override;
@@ -314,7 +314,7 @@ async function readListedEntries(names: string[]): Promise<ListedEntry[]> {
  *
  * `announce` controls the stdout confirmation. `stop` reports the session it
  * retired, while `open` suppresses the line because its stdout carries only
- * the `HTMLPPT_URL` contract and warns about the replacement on stderr.
+ * the `HTMLCRAFT_URL` contract and warns about the replacement on stderr.
  */
 async function stopSession(
   session: SessionEntry,
@@ -346,7 +346,7 @@ async function stopSession(
     // The registry changed after the health check; never signal a pid that no
     // longer matches the session that was verified.
     io.stderr(
-      `The editor session for ${session.path} changed while stopping it. Retry "htmlppt stop ${session.path}".`
+      `The editor session for ${session.path} changed while stopping it. Retry "htmlcraft stop ${session.path}".`
     );
     return false;
   }
@@ -364,7 +364,7 @@ async function stopSession(
 
   if (!(await waitForProcessExit(session.pid, STOP_TIMEOUT_MS))) {
     io.stderr(
-      `The editor process ${session.pid} for ${session.path} did not stop within 5 seconds. Stop it manually, then run "htmlppt stop ${session.path}" again.`
+      `The editor process ${session.pid} for ${session.path} did not stop within 5 seconds. Stop it manually, then run "htmlcraft stop ${session.path}" again.`
     );
     return false;
   }
@@ -435,7 +435,7 @@ export function formatHostStartError(
   if (typeof error !== 'object' || error === null) return null;
   const { code, path: errorPath, syscall } = error as NodeJS.ErrnoException;
   if (code === 'ENOENT' && errorPath === filePath) {
-    return `Deck file not found: ${displayPath}. Create one with "htmlppt new ${displayPath}".`;
+    return `Deck file not found: ${displayPath}. Create one with "htmlcraft new ${displayPath}".`;
   }
   const unreadableDeck =
     code === 'EISDIR' ||
@@ -459,7 +459,7 @@ export async function runCli(
 
   const program = new Command();
   program
-    .name('htmlppt')
+    .name('htmlcraft')
     .description('Visual editor and tooling for static HTML presentations')
     .version('0.1.0')
     .exitOverride();
@@ -676,7 +676,7 @@ export async function runCli(
             );
           });
         }
-        io.stdout(`HTMLPPT_URL=${url}`);
+        io.stdout(`HTMLCRAFT_URL=${url}`);
         if (options.browser) {
           await openBrowser(url, io);
         }
@@ -734,7 +734,7 @@ export async function runCli(
 
       if (await hasUnresponsiveRegisteredHost(filePath)) {
         io.stderr(
-          `An editor for this deck appears to be running but is not responding. Retry in a moment or run "htmlppt stop ${file}" to stop it.`
+          `An editor for this deck appears to be running but is not responding. Retry in a moment or run "htmlcraft stop ${file}" to stop it.`
         );
         exitCode = 1;
         return;
@@ -800,7 +800,7 @@ export async function runCli(
             );
           });
         }
-        io.stdout(`HTMLPPT_URL=${sessionUrl(entry)}`);
+        io.stdout(`HTMLCRAFT_URL=${sessionUrl(entry)}`);
       };
       const start = (port: number) =>
         startHost({
@@ -908,7 +908,7 @@ export async function runCli(
         }
       }
 
-      io.stdout(`HTMLPPT_URL=${host.url}`);
+      io.stdout(`HTMLCRAFT_URL=${host.url}`);
 
       await new Promise<void>((resolvePromise) => {
         const stop = () => {
@@ -955,7 +955,7 @@ export async function runCli(
           registrySnapshot = await registrySessionNames();
         } catch (error) {
           io.stderr(
-            `Could not read the editor session registry at ${sessionsDirectory()}: ${error instanceof Error ? error.message : String(error)}. Check permissions and retry "htmlppt stop --all".`
+            `Could not read the editor session registry at ${sessionsDirectory()}: ${error instanceof Error ? error.message : String(error)}. Check permissions and retry "htmlcraft stop --all".`
           );
           exitCode = 1;
           return;
@@ -974,7 +974,7 @@ export async function runCli(
             remaining = registrySnapshot.filter((name) => after.has(name));
           } catch (error) {
             io.stderr(
-              `Could not read the editor session registry at ${sessionsDirectory()}: ${error instanceof Error ? error.message : String(error)}. Check permissions and retry "htmlppt stop --all".`
+              `Could not read the editor session registry at ${sessionsDirectory()}: ${error instanceof Error ? error.message : String(error)}. Check permissions and retry "htmlcraft stop --all".`
             );
             exitCode = 1;
             return;
@@ -983,7 +983,7 @@ export async function runCli(
             // Some registry entries survived the prune: they exist but could
             // not be read or removed. Never report those as cleaned.
             io.stderr(
-              `Could not verify ${remaining.length} editor session ${remaining.length === 1 ? 'entry that is' : 'entries that are'} still in the registry at ${sessionsDirectory()}. Check permissions, then retry "htmlppt stop --all".`
+              `Could not verify ${remaining.length} editor session ${remaining.length === 1 ? 'entry that is' : 'entries that are'} still in the registry at ${sessionsDirectory()}. Check permissions, then retry "htmlcraft stop --all".`
             );
             exitCode = 1;
             return;
@@ -1031,7 +1031,7 @@ export async function runCli(
             );
           } else if (registered?.health === 'unknown') {
             io.stderr(
-              `Could not verify a live editor for ${session.path}; leaving it running. Retry "htmlppt stop ${session.path}" when it responds.`
+              `Could not verify a live editor for ${session.path}; leaving it running. Retry "htmlcraft stop ${session.path}" when it responds.`
             );
             failed += 1;
             continue;
@@ -1048,13 +1048,13 @@ export async function runCli(
           }
           if (entryState === 'unreadable') {
             io.stderr(
-              `Could not read the editor session entry for ${session.path}. Check permissions on ${sessionsDirectory()}, then retry "htmlppt stop --all".`
+              `Could not read the editor session entry for ${session.path}. Check permissions on ${sessionsDirectory()}, then retry "htmlcraft stop --all".`
             );
             failed += 1;
             continue;
           }
           io.stderr(
-            `Could not verify a live editor for ${session.path}; leaving it running. Retry "htmlppt stop ${session.path}" when it responds.`
+            `Could not verify a live editor for ${session.path}; leaving it running. Retry "htmlcraft stop ${session.path}" when it responds.`
           );
           failed += 1;
         }
@@ -1129,7 +1129,7 @@ export async function runCli(
       }
       if (registered?.health === 'unknown') {
         io.stderr(
-          `Could not verify the editor session for ${file}; leaving it running. Retry "htmlppt stop <file>" when it responds.`
+          `Could not verify the editor session for ${file}; leaving it running. Retry "htmlcraft stop <file>" when it responds.`
         );
         exitCode = 1;
         return;
@@ -1142,13 +1142,13 @@ export async function runCli(
       // looking like a runnable command.
       if (await hasUnresponsiveRegisteredHost(filePath)) {
         io.stderr(
-          'A registered editor for this deck could not be verified; leaving it running. Retry "htmlppt stop <file>" when it responds.'
+          'A registered editor for this deck could not be verified; leaving it running. Retry "htmlcraft stop <file>" when it responds.'
         );
         exitCode = 1;
         return;
       }
       io.stderr(
-        `No live editor session for ${file}. Start one with "htmlppt open ${file}".`
+        `No live editor session for ${file}. Start one with "htmlcraft open ${file}".`
       );
       exitCode = 1;
     });

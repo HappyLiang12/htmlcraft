@@ -28,16 +28,16 @@ describe('credentials', () => {
   let previousHome: string | undefined;
 
   beforeEach(async () => {
-    previousHome = process.env.HTMLPPT_HOME;
+    previousHome = process.env.HTMLCRAFT_HOME;
     // Canonicalize the root so the exact-path assertions below compare against
     // the same spelling the store derives after resolving the deck path.
     home = await realpath(await mkdtemp(path.join(tmpdir(), 'htmlppt-cred-')));
-    process.env.HTMLPPT_HOME = home;
+    process.env.HTMLCRAFT_HOME = home;
   });
 
   afterEach(async () => {
-    if (previousHome === undefined) delete process.env.HTMLPPT_HOME;
-    else process.env.HTMLPPT_HOME = previousHome;
+    if (previousHome === undefined) delete process.env.HTMLCRAFT_HOME;
+    else process.env.HTMLCRAFT_HOME = previousHome;
     await rm(home, { recursive: true, force: true });
   });
 
@@ -324,17 +324,17 @@ describe('credentials', () => {
     expect(await readCredential(deck)).toEqual(rotated);
   });
 
-  it('falls back to ~/.htmlppt/decks when HTMLPPT_HOME is empty', () => {
-    process.env.HTMLPPT_HOME = '';
+  it('falls back to ~/.htmlcraft/decks when HTMLCRAFT_HOME is empty', () => {
+    process.env.HTMLCRAFT_HOME = '';
 
     expect(credentialsDirectory()).toBe(
-      path.join(homedir(), '.htmlppt', 'decks')
+      path.join(homedir(), '.htmlcraft', 'decks')
     );
 
-    delete process.env.HTMLPPT_HOME;
+    delete process.env.HTMLCRAFT_HOME;
 
     expect(credentialsDirectory()).toBe(
-      path.join(homedir(), '.htmlppt', 'decks')
+      path.join(homedir(), '.htmlcraft', 'decks')
     );
   });
 });

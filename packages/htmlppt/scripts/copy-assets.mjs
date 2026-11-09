@@ -6,7 +6,7 @@ const packageDir = fileURLToPath(new URL('..', import.meta.url));
 const repoRoot = join(packageDir, '..', '..');
 const distDir = join(packageDir, 'dist');
 const editorSource = join(repoRoot, 'packages', 'editor', 'dist');
-const skillSource = join(repoRoot, 'skills', 'htmlppt');
+const skillSource = join(repoRoot, 'skills', 'htmlcraft');
 
 async function requireDirectory(directory, hint) {
   try {
@@ -22,7 +22,7 @@ await requireDirectory(
 );
 await requireDirectory(
   skillSource,
-  'Skill sources not found. Restore skills/htmlppt'
+  'Skill sources not found. Restore skills/htmlcraft'
 );
 
 await mkdir(distDir, { recursive: true });

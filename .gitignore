@@ -6,7 +6,7 @@ playwright-report/
 .superpowers/
 *.log
 .DS_Store
-.htmlppt/
+.htmlcraft/
 .env
 .env.*
 !.env.example

@@ -68,7 +68,7 @@ const HISTORY_LIMIT = 20;
 const WATCH_INTERVAL_MS = 50;
 const WATCH_DEBOUNCE_MS = 100;
 const HEARTBEAT_MS = 15_000;
-export const TOKEN_COOKIE = 'htmlppt_token';
+export const TOKEN_COOKIE = 'htmlcraft_token';
 const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
 const DECK_BODY_LIMIT = 16 * 1024 * 1024;
 const EXPORT_BODY_LIMIT = 64 * 1024;
@@ -411,7 +411,7 @@ export async function startHost(options: HostOptions): Promise<HostHandle> {
   function deckUnreadable(): { error: string; message: string } {
     return {
       error: 'deck-unreadable',
-      message: `Could not read ${filePath}. Restore the deck file or stop the host with "htmlppt stop".`
+      message: `Could not read ${filePath}. Restore the deck file or stop the host with "htmlcraft stop".`
     };
   }
 
@@ -489,7 +489,7 @@ export async function startHost(options: HostOptions): Promise<HostHandle> {
     }
 
     const source: RevisionSource =
-      c.req.header('x-htmlppt-source') === 'mcp' ? 'mcp' : 'editor';
+      c.req.header('x-htmlcraft-source') === 'mcp' ? 'mcp' : 'editor';
     const forced = force === true;
 
     return withSaveLock(async () => {
@@ -852,7 +852,7 @@ export async function startHost(options: HostOptions): Promise<HostHandle> {
             {
               error: 'renderer-unavailable',
               message: error.message,
-              hint: 'Install Google Chrome, Microsoft Edge or Chromium, or set HTMLPPT_CHROMIUM to its executable path.'
+              hint: 'Install Google Chrome, Microsoft Edge or Chromium, or set HTMLCRAFT_CHROMIUM to its executable path.'
             },
             501
           );
@@ -923,10 +923,10 @@ export async function startHost(options: HostOptions): Promise<HostHandle> {
     if (queryToken !== options.token && cookieToken !== options.token) {
       const deckName = path.basename(filePath);
       return c.html(
-        `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>htmlppt</title></head>` +
+        `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>htmlcraft</title></head>` +
           `<body><main><h1>This browser has no session for ${escapeHtml(deckName)}</h1>` +
           `<p>The editor host is running, but this browser has no valid session cookie for it.</p>` +
-          `<p>Run <code>htmlppt open &lt;deck&gt;</code> in a terminal and open the printed URL once; ` +
+          `<p>Run <code>htmlcraft open &lt;deck&gt;</code> in a terminal and open the printed URL once; ` +
           `this browser is signed in for 30 days afterwards.</p></main></body></html>`,
         401
       );

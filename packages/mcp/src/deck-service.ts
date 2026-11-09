@@ -400,7 +400,7 @@ export class HostDeckService implements DeckService {
     const headers: Record<string, string> = {
       authorization: `Bearer ${this.token}`,
       ...(body === undefined ? {} : { 'content-type': 'application/json' }),
-      ...(method === 'PUT' ? { 'x-htmlppt-source': 'mcp' } : {})
+      ...(method === 'PUT' ? { 'x-htmlcraft-source': 'mcp' } : {})
     };
     try {
       return await fetch(`${this.hostUrl}${route}`, {
@@ -464,7 +464,7 @@ export class HostDeckService implements DeckService {
 
 /**
  * Uses the host that owns the deck when a registered session is alive and its
- * authenticated health endpoint responds. HTMLPPT_MCP_MODE=direct is a
+ * authenticated health endpoint responds. HTMLCRAFT_MCP_MODE=direct is a
  * universal override: it forces direct file access even when hostUrl/token are
  * provided. Any other value allows host auto-selection.
  */
@@ -472,7 +472,7 @@ export async function createDeckService(
   filePath: string,
   options: DeckServiceOptions = {}
 ): Promise<DeckService> {
-  if (process.env.HTMLPPT_MCP_MODE === 'direct') {
+  if (process.env.HTMLCRAFT_MCP_MODE === 'direct') {
     return new DirectDeckService();
   }
 

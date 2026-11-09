@@ -1,6 +1,6 @@
 # Architecture
 
-htmlppt is a TypeScript monorepo with a small contract engine, a local HTTP host,
+htmlcraft is a TypeScript monorepo with a small contract engine, a local HTTP host,
 a browser editor, an agent-facing MCP server, and export tooling. The deck file
 is the integration point: every package reads or writes the same
 `htmldeck/v1` HTML.
@@ -16,7 +16,7 @@ is the integration point: every package reads or writes the same
 | `@htmlppt/renderer` | Headless system-Chromium rendering through `playwright-core`: PDF (one page per slide, exact page boxes) and PNG (one file per slide at 2× scale). Includes browser discovery and the renderer sandbox. |
 | `@htmlppt/mcp` | Stdio MCP server built on the official SDK and Zod. Registers 25 tools and 3 resources, resolves targets, maps domain errors, and chooses direct or host-attached storage per deck. |
 | `@htmlppt/cli` | Commander command surface: `new`, `validate`, `export`, `outline`, `open`, `stop`, `mcp`. Starts/reuses hosts, prefers the stored port and token, writes the session registry and the credential store, resolves the packaged or workspace editor build, refuses export over the source path, and prints URLs and diagnostics. |
-| `htmlppt` | Publishable bundle. tsup bundles the CLI and MCP entrypoints plus workspace libraries, keeps `playwright-core` external, and copies the built editor and `skills/htmlppt` into `dist/`. Bins: `htmlppt` and `htmlppt-mcp`. |
+| `htmlcraft` | Publishable bundle. tsup bundles the CLI and MCP entrypoints plus workspace libraries, keeps `playwright-core` external, and copies the built editor and `skills/htmlcraft` into `dist/`. Bins: `htmlcraft` and `htmlcraft-mcp`. |
 | `@htmlppt/test-utils` | Shared test helpers and fixtures. |
 
 Dependency boundaries are enforced by `npm run lint:deps`:
@@ -47,11 +47,11 @@ agent (MCP / CLI)                    human (browser)
    document, normalizes it, applies one mutation, validates the whole result,
    and serializes it; the calling host/CLI/MCP layer writes it atomically. The
    new file hash becomes the revision.
-2. **Open.** `htmlppt open` or MCP `open_editor` starts a host and records
+2. **Open.** `htmlcraft open` or MCP `open_editor` starts a host and records
    `{ path, port, token, pid, startedAt, revision }` in
-   `~/.htmlppt/sessions/<sha256(path)>.json`, then prints an authenticated URL.
+   `~/.htmlcraft/sessions/<sha256(path)>.json`, then prints an authenticated URL.
    The host layer also keeps a per-deck credential at
-   `~/.htmlppt/decks/<sha256(canonical path)>.json` holding
+   `~/.htmlcraft/decks/<sha256(canonical path)>.json` holding
    `{ token, port, createdAt, updatedAt }` (directory `0700`, file `0600` best
    effort). `open` prefers that stored port and token, so a tokenized URL
    remains valid across a crash/restart; a deck switch moves the credential to
@@ -296,7 +296,7 @@ and builds the presenter UI in it. Presenter preview iframes are script-free.
 
 The editor wraps both routes (`App` and `PresenterView`) in `LocaleProvider`
 from `packages/editor/src/i18n`. The provider resolves the stored
-`htmlppt.locale` value first, then `navigator.language`, and exposes a typed
+`htmlcraft.locale` value first, then `navigator.language`, and exposes a typed
 `t(key, vars)` over the three dictionaries. It mirrors the active locale to
 `<html lang>` and persists manual choices.
 
@@ -323,7 +323,7 @@ popup copies the resolved locale to its own `<html lang>`.
 
 ## Renderer pipeline
 
-1. **Find Chromium.** `HTMLPPT_CHROMIUM` wins. An explicitly set but invalid
+1. **Find Chromium.** `HTMLCRAFT_CHROMIUM` wins. An explicitly set but invalid
    path fails instead of falling back. Otherwise discovery checks platform
    Chrome/Edge/Chromium locations and Playwright browser caches.
 2. **Launch.** Headless Chromium with the Chromium sandbox enabled. The browser
@@ -360,7 +360,7 @@ the CLI/MCP map them to actionable messages.
 | Unit | `npm run test:unit` | Core contract/mutation/format tests and editor controller, geometry, history, shortcut, command, live-sync, and presenter-protocol tests (jsdom). |
 | Integration | `npm run test:integration` | Builds, then runs the renderer against real Chromium, the host over real HTTP, MCP over real stdio, and CLI subprocesses against real files. |
 | E2E | `npm run test:e2e` | Playwright Chromium: editor flows, runtime, presenter, security, accessibility, export UI, standalone mode, crash recovery, insertion, tables, charts, and visual round trips. Visual comparisons require less than 0.1% differing pixels. |
-| Package | `npm run test:package` | Packs the real `htmlppt` tarball, installs it in an empty temp project, and exercises installed bins, editor assets, skill, docs, auth, host lifecycle, and MCP handshake. |
+| Package | `npm run test:package` | Packs the real `htmlcraft` tarball, installs it in an empty temp project, and exercises installed bins, editor assets, skill, docs, auth, host lifecycle, and MCP handshake. |
 | Matrix | `npm run test:matrix` | Checks that every feature id in `docs/features.json` has tagged `@feature:<id>` coverage. |
 
 `npm run verify:fast` runs lint, dependency boundaries, typecheck, unit,

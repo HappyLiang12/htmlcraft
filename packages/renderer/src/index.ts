@@ -16,7 +16,7 @@ const LAUNCH_TIMEOUT_MS = 60000;
 
 export class RendererUnavailableError extends Error {
   constructor() {
-    super('Chromium is unavailable. Install Google Chrome, Microsoft Edge or Chromium, or set HTMLPPT_CHROMIUM to its executable path.');
+    super('Chromium is unavailable. Install Google Chrome, Microsoft Edge or Chromium, or set HTMLCRAFT_CHROMIUM to its executable path.');
     this.name = 'RendererUnavailableError';
   }
 }

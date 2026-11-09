@@ -1,11 +1,11 @@
 ---
-name: htmlppt
-description: Create, edit, validate, preview, and export self-contained HTML presentation decks in the htmlppt (htmldeck/v1) format. Use when asked to build slides, turn an outline or notes into a deck, edit an existing .html deck, work with slide order, speaker notes, or transitions, or drive the htmlppt MCP server or CLI. Not for .pptx or other Office formats.
+name: htmlcraft
+description: Create, edit, validate, preview, and export self-contained HTML presentation decks in the htmlcraft (htmldeck/v1) format. Use when asked to build slides, turn an outline or notes into a deck, edit an existing .html deck, work with slide order, speaker notes, or transitions, or drive the htmlcraft MCP server or CLI. Not for .pptx or other Office formats.
 ---
 
-# htmlppt
+# htmlcraft
 
-An htmlppt deck is one self-contained HTML file. Slides are ordinary DOM
+An htmlcraft deck is one self-contained HTML file. Slides are ordinary DOM
 elements, styling is ordinary CSS, and every object keeps a stable id so the
 visual editor and MCP tools can address it. The HTML file is the source of
 truth: there is no sidecar project file.
@@ -17,8 +17,8 @@ truth: there is no sidecar project file.
 - Validate a deck before sharing or exporting.
 - Open the visual editor for human review, or export to standalone HTML, PDF,
   or one PNG per slide.
-- Automate deck work through the htmlppt MCP server (`htmlppt-mcp` or
-  `htmlppt mcp`) or the `htmlppt` CLI.
+- Automate deck work through the htmlcraft MCP server (`htmlcraft-mcp` or
+  `htmlcraft mcp`) or the `htmlcraft` CLI.
 
 Do not use this skill for `.pptx`/PowerPoint files, video, or real-time
 collaboration. v1 supports static HTML decks and HTML, PDF, and PNG export.
@@ -26,11 +26,11 @@ collaboration. v1 supports static HTML decks and HTML, PDF, and PNG export.
 ## Choose a workflow
 
 **MCP-first (preferred when a tool-capable agent is available).** Use the
-`htmlppt` MCP server. Read the contract resource once, create or inspect the
+`htmlcraft` MCP server. Read the contract resource once, create or inspect the
 deck, mutate in small steps, validate, and only then open or export. The tool
 surface is documented in [references/mcp-tools.md](references/mcp-tools.md).
 
-**CLI fallback.** Use `htmlppt` when MCP is not available or a script needs an
+**CLI fallback.** Use `htmlcraft` when MCP is not available or a script needs an
 exit code. The CLI talks to the same files and contract.
 
 Both workflows are safe to mix: MCP writes are atomic and revision-checked.
@@ -59,7 +59,7 @@ with reload or overwrite choices. A save based on an old revision returns
   `fade`, or `slide`.
 - Runtime: multi-slide decks include exactly one
   `<script data-ppt-runtime="1">...</script>` with the real runtime body, not
-  an empty marker. `create_deck` and `htmlppt new` write it for you.
+  an empty marker. `create_deck` and `htmlcraft new` write it for you.
 - Charts: a figure with `data-ppt-chart='{"type":"bar","labels":["Q1"],"series":[{"name":"USD","values":[12]}]}'`
   holding valid JSON. The rendered SVG is derived from that attribute.
 - Assets: use `data:` URIs or absolute URLs. Relative asset paths are flagged
@@ -74,7 +74,7 @@ Full details and validation diagnostics are in
 ## Starter template
 
 For a runnable starter, copy [examples/basic.html](examples/basic.html) or let
-MCP `create_deck` / `htmlppt new` generate the deck. Both include the real
+MCP `create_deck` / `htmlcraft new` generate the deck. Both include the real
 presentation runtime. The skeleton below abbreviates that script body so the
 structure stays readable: replace the placeholder with the runtime from
 `examples/basic.html` before presenting the file.
@@ -121,14 +121,14 @@ structure stays readable: replace the placeholder with the runtime from
 **The runtime marker must contain the real runtime source.** Validation only
 checks for a `<script data-ppt-runtime="1">` marker; it does not inspect the
 script body. A deck saved with the comment above still passes validation but
-will not present. Create decks with `htmlppt new` or MCP `create_deck`, or copy
+will not present. Create decks with `htmlcraft new` or MCP `create_deck`, or copy
 the full runtime from [examples/basic.html](examples/basic.html).
 
 ## MCP workflow
 
 1. Learn the contract. Call `get_deck_contract` or read the
-   `htmlppt://contract` and `htmlppt://authoring` resources. Read
-   `htmlppt://example` when you need a working reference deck.
+   `htmlcraft://contract` and `htmlcraft://authoring` resources. Read
+   `htmlcraft://example` when you need a working reference deck.
 2. Create or inspect.
    - New deck: `create_deck` with `path`, `title`, and `slides`. It never
      overwrites an existing file.
@@ -149,7 +149,7 @@ the full runtime from [examples/basic.html](examples/basic.html).
    whole file.
 7. Export with `export_deck` and `format: "html"` for a self-contained
    `.export.html` file, or `format: "pdf"` / `"png"` for rendered output. PDF
-   and PNG need a system Chrome, Edge, or Chromium (or `HTMLPPT_CHROMIUM`).
+   and PNG need a system Chrome, Edge, or Chromium (or `HTMLCRAFT_CHROMIUM`).
 
 Every mutation returns a new `revision`. Reads return the revision they
 observed. Pass no revision explicitly: the MCP server tracks the last
@@ -158,29 +158,29 @@ read/written revision per file and compares it before writing.
 ## CLI fallback
 
 ```bash
-htmlppt new deck.html --title "Quarterly review" --slides 3
-htmlppt validate deck.html            # exit 0 valid, 1 invalid
-htmlppt validate deck.html --json
-htmlppt outline deck.html             # human summary
-htmlppt outline deck.html --json
-htmlppt open deck.html                # prints HTMLPPT_URL=http://127.0.0.1:...
-htmlppt open deck.html --no-browser --port 0
-htmlppt stop deck.html                # stop one host
-htmlppt stop --all                    # stop every live host
-htmlppt export deck.html --format html --out dist/deck.html
-htmlppt export deck.html --format pdf --out dist/deck.pdf
-htmlppt export deck.html --format png --out dist/png
-htmlppt mcp                           # same stdio server as htmlppt-mcp
+htmlcraft new deck.html --title "Quarterly review" --slides 3
+htmlcraft validate deck.html            # exit 0 valid, 1 invalid
+htmlcraft validate deck.html --json
+htmlcraft outline deck.html             # human summary
+htmlcraft outline deck.html --json
+htmlcraft open deck.html                # prints HTMLCRAFT_URL=http://127.0.0.1:...
+htmlcraft open deck.html --no-browser --port 0
+htmlcraft stop deck.html                # stop one host
+htmlcraft stop --all                    # stop every live host
+htmlcraft export deck.html --format html --out dist/deck.html
+htmlcraft export deck.html --format pdf --out dist/deck.pdf
+htmlcraft export deck.html --format png --out dist/png
+htmlcraft mcp                           # same stdio server as htmlcraft-mcp
 ```
 
 PDF and PNG export launch a system Chrome, Edge, or Chromium; set
-`HTMLPPT_CHROMIUM` to an executable path when auto-discovery fails. `--out` is
+`HTMLCRAFT_CHROMIUM` to an executable path when auto-discovery fails. `--out` is
 a file for `html`/`pdf` and a directory for `png`.
 
 `open` reuses a host only when two probes pass: the authenticated health
 endpoint accepts the deck and the editor shell at `/d/<deck-name>` is the built
 editor. A new host reuses the deck's recorded token and port, so the tokenized
-URL stays valid across a restart until `htmlppt stop` rotates the token; a
+URL stays valid across a restart until `htmlcraft stop` rotates the token; a
 stale-build replacement rotates it too, because `open` stops the broken host
 first, so a URL bookmarked before the replacement needs the newly printed one.
 An explicit `--port` wins, and `--port 0` forces a fresh ephemeral port instead
@@ -208,7 +208,7 @@ runtime script.
 Validate them with:
 
 ```bash
-htmlppt validate skills/htmlppt/examples/basic.html
+htmlcraft validate skills/htmlcraft/examples/basic.html
 ```
 
 ## Authoring rules that prevent rework
@@ -231,7 +231,7 @@ htmlppt validate skills/htmlppt/examples/basic.html
   the `relative-asset` warning.
 - Keep chart JSON small and valid. `data-ppt-chart` is parsed during
   validation.
-- Run `validate_deck` / `htmlppt validate` before exporting or handing the deck
+- Run `validate_deck` / `htmlcraft validate` before exporting or handing the deck
   to a person.
 
 ## Troubleshooting

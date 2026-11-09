@@ -1,6 +1,6 @@
 # Security
 
-htmlppt is a local-first tool. It has no accounts, cloud service, telemetry, or
+htmlcraft is a local-first tool. It has no accounts, cloud service, telemetry, or
 remote API of its own. The security model assumes a single user on a trusted
 machine opening untrusted deck HTML produced by an agent or another person.
 
@@ -27,27 +27,27 @@ Out of scope:
 - a compromised operating system, browser, Chrome extension, or another
   process already running with the same user privileges;
 - browser zero-days and network attackers who can intercept loopback traffic;
-- decks that the user deliberately executes outside htmlppt (for example by
+- decks that the user deliberately executes outside htmlcraft (for example by
   opening an exported HTML file directly in a browser).
 
 ## Local host and session token
 
-`htmlppt open` starts an HTTP server bound to `127.0.0.1` (never a wildcard
+`htmlcraft open` starts an HTTP server bound to `127.0.0.1` (never a wildcard
 address). Without `--port` it prefers the port recorded for the deck and falls
 back to an operating-system-assigned port; an explicit `--port` (including
 `0`) always wins.
 
 - Each deck has a credential file at
-  `<HTMLPPT_HOME or ~/.htmlppt>/decks/<key>.json` holding `{token, port,
+  `<HTMLCRAFT_HOME or ~/.htmlcraft>/decks/<key>.json` holding `{token, port,
   createdAt, updatedAt}`. The directory is created with mode `0700` and the
   file with `0600` where the platform supports it. `open` reuses the recorded
   token and port for that deck, including across a crash/restart; the token
-  stays valid until the next `htmlppt stop` rotates it (`stop` keeps the port).
+  stays valid until the next `htmlcraft stop` rotates it (`stop` keeps the port).
   If the rotation write fails, the credential is discarded when possible; if
   removing it also fails, the CLI warning names the file still holding the
   token instead of leaving it silently on disk.
 - The printed URL carries the token as `?token=...`; treat it as a secret until
-  `htmlppt stop` rotates it.
+  `htmlcraft stop` rotates it.
 - A tokenized request for `/` or `/d/<name>` sets an `HttpOnly`,
   `SameSite=Strict`, `Path=/` cookie with a 30-day `Max-Age` and redirects to
   `/d/<name>`, so the address bar no longer contains the token. Successful
@@ -66,12 +66,12 @@ back to an operating-system-assigned port; an explicit `--port` (including
 - The API exposes only the opened deck. Static serving is limited to the
   packaged editor assets; there is no directory listing and no static serving of
   the deck directory.
-- Session registry files live under `~/.htmlppt/sessions` (or
-  `$HTMLPPT_HOME/sessions`) and contain the token and process id. The directory
+- Session registry files live under `~/.htmlcraft/sessions` (or
+  `$HTMLCRAFT_HOME/sessions`) and contain the token and process id. The directory
   is created with mode `0700` and entries with `0600` where the platform
   supports it. Protect your home directory accordingly.
 
-`htmlppt open` reuses a session only when two probes pass: the authenticated
+`htmlcraft open` reuses a session only when two probes pass: the authenticated
 `/api/health` endpoint must accept the deck, and the editor shell at
 `/d/<deck-name>` must be the built editor (an HTML response containing its root
 element). Health alone is not trusted, because a host can own the deck while its
@@ -150,7 +150,7 @@ Chromium sandbox enabled.
   file. PDF and PNG outputs are staged in a temporary file and renamed into
   place.
 - When no usable Chromium is found, export fails with an actionable error. An
-  explicitly invalid `HTMLPPT_CHROMIUM` does not fall back to another browser.
+  explicitly invalid `HTMLCRAFT_CHROMIUM` does not fall back to another browser.
 
 ## Export path confinement
 
@@ -185,7 +185,7 @@ with the permissions of the process that starts it.
 - **Host-attached mode** is selected automatically when a healthy editor session
   owns the deck. Reads, most mutations, and PDF/PNG exports route through the
   authenticated loopback host, so the editor receives revision events. Set
-  `HTMLPPT_MCP_MODE=direct` to force file access even when a host is live.
+  `HTMLCRAFT_MCP_MODE=direct` to force file access even when a host is live.
 - `export_deck` confines `outDir` to the deck directory in direct and
   host-attached mode.
 - `add_image` can embed a local image as a data URL. A prompt-injected agent
@@ -200,7 +200,7 @@ Do not open a public issue for a sensitive security report. Use the repository's
 GitHub Security Advisories page and choose **Report a vulnerability** to start a
 private advisory. Include:
 
-- the htmlppt version and operating system;
+- the htmlcraft version and operating system;
 - a minimal deck or exact reproduction steps;
 - the impact you observed, including whether the host, editor, MCP server, or
   renderer was involved.

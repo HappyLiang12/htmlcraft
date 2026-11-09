@@ -26,12 +26,12 @@ describe('serialization', () => {
   it('adds a generator comment for exports', () => {
     const html = serializeExport(parseDeckHtml(source));
 
-    expect(html).toContain('<!-- Edited with htmlppt. Format: htmldeck/v1. -->');
+    expect(html).toContain('<!-- Edited with htmlcraft. Format: htmldeck/v1. -->');
     expect(
-      html.startsWith('<!doctype html>\n<!-- Edited with htmlppt. Format: htmldeck/v1. -->')
+      html.startsWith('<!doctype html>\n<!-- Edited with htmlcraft. Format: htmldeck/v1. -->')
     ).toBe(true);
     expect(
-      html.match(/<!-- Edited with htmlppt\. Format: htmldeck\/v1\. -->/g)
+      html.match(/<!-- Edited with htmlcraft\. Format: htmldeck\/v1\. -->/g)
     ).toHaveLength(1);
   });
 
@@ -41,7 +41,7 @@ describe('serialization', () => {
 
     expect(html.match(/data-ppt-runtime="1"/g)).toHaveLength(1);
     expect(html).toContain(RUNTIME_SOURCE);
-    expect(html).toContain('<!-- Edited with htmlppt. Format: htmldeck/v1. -->');
+    expect(html).toContain('<!-- Edited with htmlcraft. Format: htmldeck/v1. -->');
     expect(html.indexOf('data-ppt-runtime="1"')).toBeLessThan(
       html.indexOf('</body>')
     );

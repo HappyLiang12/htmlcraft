@@ -398,7 +398,7 @@ test(
       const anonymousBody = await anonymous.text();
       expect(anonymousBody).toContain('security.html');
       expect(anonymousBody).toContain('no valid session cookie');
-      expect(anonymousBody).toContain('htmlppt open');
+      expect(anonymousBody).toContain('htmlcraft open');
       expect(anonymousBody).not.toContain(hostToken(host.url));
       expect(anonymousBody).not.toContain('canvas-preview');
 
@@ -408,7 +408,7 @@ test(
       const wrongBody = await wrong.text();
       expect(wrongBody).toContain('security.html');
       expect(wrongBody).toContain('no valid session cookie');
-      expect(wrongBody).toContain('htmlppt open');
+      expect(wrongBody).toContain('htmlcraft open');
       expect(wrongBody).not.toContain(hostToken(host.url));
       expect(wrongBody).not.toContain('canvas-preview');
 
@@ -628,7 +628,7 @@ test(
       );
 
       host = await startHostWithEnvironment(directory, 'security.html', {
-        HTMLPPT_EDITOR_DIR: editorDirectory
+        HTMLCRAFT_EDITOR_DIR: editorDirectory
       });
       const origin = hostOrigin(host.url);
       const token = hostToken(host.url);
@@ -997,8 +997,8 @@ test(
       await writeFile(deckPath, MCP_DECK, 'utf8');
 
       client = await connectMcp(work, {
-        HTMLPPT_HOME: home,
-        HTMLPPT_MCP_MODE: 'direct'
+        HTMLCRAFT_HOME: home,
+        HTMLCRAFT_MCP_MODE: 'direct'
       });
 
       const outline = await mcpCall(client, 'get_outline', { path: 'deck.html' });
@@ -1067,7 +1067,7 @@ test(
       await writeFile(deckPath, MCP_DECK, 'utf8');
 
       host = await startHostWithEnvironment(work, 'hosted.html', {
-        HTMLPPT_HOME: home
+        HTMLCRAFT_HOME: home
       });
       const origin = hostOrigin(host.url);
       const token = hostToken(host.url);
@@ -1078,9 +1078,9 @@ test(
       expect((await sse.next()).event).toBe('hello');
 
       client = await connectMcp(work, {
-        HTMLPPT_HOME: home,
+        HTMLCRAFT_HOME: home,
         // Empty (not "direct") lets findLiveSession select the live host.
-        HTMLPPT_MCP_MODE: ''
+        HTMLCRAFT_MCP_MODE: ''
       });
 
       const edited = await mcpCall(client, 'set_text', {

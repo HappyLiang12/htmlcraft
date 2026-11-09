@@ -116,9 +116,9 @@ interface SessionFixture {
  * written where `findLiveSession` will look for them.
  */
 async function sessionFixture(): Promise<SessionFixture> {
-  const dir = await makeTempDir('htmlppt-mcp-session-');
-  const previousHome = process.env.HTMLPPT_HOME;
-  process.env.HTMLPPT_HOME = join(dir, 'home');
+  const dir = await makeTempDir('htmlcraft-mcp-session-');
+  const previousHome = process.env.HTMLCRAFT_HOME;
+  process.env.HTMLCRAFT_HOME = join(dir, 'home');
   const deckDirectory = join(dir, 'decks');
   await mkdir(deckDirectory);
   const deckPath = join(deckDirectory, 'demo.deck.html');
@@ -130,9 +130,9 @@ async function sessionFixture(): Promise<SessionFixture> {
     sessionFile,
     cleanup: async () => {
       if (previousHome === undefined) {
-        delete process.env.HTMLPPT_HOME;
+        delete process.env.HTMLCRAFT_HOME;
       } else {
-        process.env.HTMLPPT_HOME = previousHome;
+        process.env.HTMLCRAFT_HOME = previousHome;
       }
       await rm(dir, { recursive: true, force: true });
     }
@@ -284,11 +284,11 @@ describe('probeSessionHealth', () => {
           headers: {
             location: '/d/demo.html',
             'set-cookie':
-              'htmlppt_token=secret; HttpOnly; SameSite=Strict; Path=/'
+              'htmlcraft_token=secret; HttpOnly; SameSite=Strict; Path=/'
           }
         };
       }
-      if (request.headers.cookie === 'htmlppt_token=secret') {
+      if (request.headers.cookie === 'htmlcraft_token=secret') {
         return {
           status: 200,
           type: 'text/html',

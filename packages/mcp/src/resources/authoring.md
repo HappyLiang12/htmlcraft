@@ -1,4 +1,4 @@
-# Authoring decks for htmlppt
+# Authoring decks for htmlcraft
 
 These notes describe how an agent should author and edit decks through MCP.
 

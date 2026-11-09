@@ -329,7 +329,7 @@ export function registerTools(
     {
       title: 'Get deck contract',
       description:
-        'Return the deck contract and authoring guidance for htmlppt documents.',
+        'Return the deck contract and authoring guidance for htmlcraft documents.',
       inputSchema: z.object({}).strict()
     },
     async () => jsonResult({ contract, authoring })
@@ -976,7 +976,7 @@ export function registerTools(
         } catch {
           throw new ToolError(
             'editor-unavailable',
-            `The htmlppt CLI build was not found at ${cliBin}. Run "npm run build" first.`
+            `The htmlcraft CLI build was not found at ${cliBin}. Run "npm run build" first.`
           );
         }
         const editorArgs = ['open', filePath];
@@ -1112,9 +1112,9 @@ export function registerTools(
 export function registerResources(server: McpServer): void {
   server.registerResource(
     'contract',
-    'htmlppt://contract',
+    'htmlcraft://contract',
     {
-      title: 'htmlppt deck contract',
+      title: 'htmlcraft deck contract',
       description: 'The htmldeck/v1 document, slide, object, and runtime contract.',
       mimeType: 'text/markdown'
     },
@@ -1127,9 +1127,9 @@ export function registerResources(server: McpServer): void {
 
   server.registerResource(
     'authoring',
-    'htmlppt://authoring',
+    'htmlcraft://authoring',
     {
-      title: 'htmlppt authoring guidance',
+      title: 'htmlcraft authoring guidance',
       description: 'Agent-oriented guidance for authoring and editing decks.',
       mimeType: 'text/markdown'
     },
@@ -1142,9 +1142,9 @@ export function registerResources(server: McpServer): void {
 
   server.registerResource(
     'example',
-    'htmlppt://example',
+    'htmlcraft://example',
     {
-      title: 'htmlppt example deck',
+      title: 'htmlcraft example deck',
       description: 'A minimal valid deck with text, image, shape, table, chart, notes, and runtime.',
       mimeType: 'text/html'
     },

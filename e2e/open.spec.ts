@@ -95,7 +95,7 @@ async function startIsolatedHost(
   return startCliHost(cliPath, directory, file, { home });
 }
 
-/** The registry path the CLI uses: HTMLPPT_HOME/sessions/<sha256(path)>.json */
+/** The registry path the CLI uses: HTMLCRAFT_HOME/sessions/<sha256(path)>.json */
 function registryFile(home: string, deckPath: string): string {
   const key = createHash('sha256').update(deckPath).digest('hex');
   return join(home, 'sessions', `${key}.json`);
@@ -638,16 +638,16 @@ test(
       const reopened = await execa(
         'node',
         [cliPath, 'open', secondName, '--no-browser'],
-        { cwd: root, env: { ...process.env, HTMLPPT_HOME: home } }
+        { cwd: root, env: { ...process.env, HTMLCRAFT_HOME: home } }
       );
-      const urls = reopened.stdout.match(/HTMLPPT_URL=(\S+)/g) ?? [];
+      const urls = reopened.stdout.match(/HTMLCRAFT_URL=(\S+)/g) ?? [];
       expect(urls).toHaveLength(1);
-      const nextUrl = new URL(/HTMLPPT_URL=(\S+)/.exec(reopened.stdout)?.[1] ?? '');
+      const nextUrl = new URL(/HTMLCRAFT_URL=(\S+)/.exec(reopened.stdout)?.[1] ?? '');
       expect(nextUrl.port).toBe(new URL(host.url).port);
 
       const stopped = await execa('node', [cliPath, 'stop', secondName], {
         cwd: root,
-        env: { ...process.env, HTMLPPT_HOME: home }
+        env: { ...process.env, HTMLCRAFT_HOME: home }
       });
       expect(stopped.stdout).toContain('Stopped editor');
       await expect

@@ -113,7 +113,7 @@ export function Toolbar({
       className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line px-4 py-2"
     >
       <div className="flex min-w-0 items-center gap-3">
-        <span className="text-sm font-semibold tracking-wide">htmlppt</span>
+        <span className="text-sm font-semibold tracking-wide">htmlcraft</span>
         <PathInput
           value={filePath}
           editable={pathEditable}

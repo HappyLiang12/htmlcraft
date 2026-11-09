@@ -175,7 +175,7 @@ describe('host export endpoint', () => {
 
       const exported = await readFile(expected, 'utf8');
       expect(exported).toContain(
-        '<!-- Edited with htmlppt. Format: htmldeck/v1. -->'
+        '<!-- Edited with htmlcraft. Format: htmldeck/v1. -->'
       );
       expect(exported).toContain('data-ppt-deck');
       expect(exported).toContain('data-slide-id="s2"');
@@ -393,20 +393,20 @@ describe('host export endpoint', () => {
     'reports an unavailable renderer with actionable instructions',
     async () => {
       const ctx = await setup();
-      const previous = process.env.HTMLPPT_CHROMIUM;
-      process.env.HTMLPPT_CHROMIUM = path.join(ctx.dir, 'missing-browser.exe');
+      const previous = process.env.HTMLCRAFT_CHROMIUM;
+      process.env.HTMLCRAFT_CHROMIUM = path.join(ctx.dir, 'missing-browser.exe');
       try {
         const response = await postExport(ctx, { format: 'pdf' });
         expect(response.status).toBe(501);
         const body = await readJson(response);
         expect(body.error).toBe('renderer-unavailable');
-        expect(String(body.message)).toMatch(/HTMLPPT_CHROMIUM/);
+        expect(String(body.message)).toMatch(/HTMLCRAFT_CHROMIUM/);
         expect(String(body.hint)).toMatch(/install/i);
       } finally {
         if (previous === undefined) {
-          delete process.env.HTMLPPT_CHROMIUM;
+          delete process.env.HTMLCRAFT_CHROMIUM;
         } else {
-          process.env.HTMLPPT_CHROMIUM = previous;
+          process.env.HTMLCRAFT_CHROMIUM = previous;
         }
       }
       await expect(stat(path.join(ctx.dir, 'fixture.pdf'))).rejects.toThrow();

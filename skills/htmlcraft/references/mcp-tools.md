@@ -1,7 +1,7 @@
-# htmlppt MCP tools and resources
+# htmlcraft MCP tools and resources
 
-The htmlppt MCP server exposes 25 tools and 3 resources over stdio. Start it with
-`htmlppt-mcp` or `htmlppt mcp`. Tool names and arguments below are the complete
+The htmlcraft MCP server exposes 25 tools and 3 resources over stdio. Start it with
+`htmlcraft-mcp` or `htmlcraft mcp`. Tool names and arguments below are the complete
 supported surface; there are no other deck tools in this milestone.
 
 ## Shared conventions
@@ -303,7 +303,7 @@ Starts a detached local editor host for an existing deck and returns
 `http://127.0.0.1:53211/?token=...`. `port` defaults to the port recorded for
 the deck, or an operating-system-assigned port when none is recorded; an
 explicit `port` wins. The token is recorded per deck and reused by later opens
-until `htmlppt stop` rotates it; replacing a stale-build host rotates it too,
+until `htmlcraft stop` rotates it; replacing a stale-build host rotates it too,
 because `open` stops the broken host first, so a URL from before the replacement
 needs the newly printed one. Apart from that replacement, the tokenized URL
 keeps working across a host restart. `open` (default false) controls whether a
@@ -336,7 +336,7 @@ Arguments: `{ path, format, outDir? }`.
 - `png` returns `{ path, format: "png", files }` with one
   `<deck-name>-sN.png` per slide.
 
-PDF and PNG require a system Chrome, Edge, or Chromium (or `HTMLPPT_CHROMIUM`)
+PDF and PNG require a system Chrome, Edge, or Chromium (or `HTMLCRAFT_CHROMIUM`)
 and fail with `renderer-unavailable` when none is found; `export-failed`
 reports a rendering error. `outDir` resolves against the deck directory and
 must stay inside it for every format, in direct and host-attached mode; an
@@ -347,12 +347,12 @@ and includes `errors`.
 
 | URI | MIME type | Content |
 | --- | --- | --- |
-| `htmlppt://contract` | `text/markdown` | The htmldeck/v1 contract. |
-| `htmlppt://authoring` | `text/markdown` | Agent authoring guidance. |
-| `htmlppt://example` | `text/html` | A complete valid example deck with text, image, shape, table, chart, notes, transitions, and the real runtime. |
+| `htmlcraft://contract` | `text/markdown` | The htmldeck/v1 contract. |
+| `htmlcraft://authoring` | `text/markdown` | Agent authoring guidance. |
+| `htmlcraft://example` | `text/html` | A complete valid example deck with text, image, shape, table, chart, notes, transitions, and the real runtime. |
 
-Read `htmlppt://contract` and `htmlppt://authoring` before the first edit in a
-session. Read `htmlppt://example` when you need a working reference file.
+Read `htmlcraft://contract` and `htmlcraft://authoring` before the first edit in a
+session. Read `htmlcraft://example` when you need a working reference file.
 
 ## Error codes
 
@@ -369,7 +369,7 @@ relevant, `slideId`, `target`, `outputPath`, `currentRevision`, or `errors`.
 | `directory-not-found` | The parent directory of a new file does not exist. |
 | `invalid-deck` | The supplied or exported deck failed validation. Inspect `errors`. |
 | `invalid-result` | A mutation would make the deck invalid and was rejected. |
-| `renderer-unavailable` | PDF/PNG export found no Chrome, Edge, or Chromium. Install one or set `HTMLPPT_CHROMIUM`. |
+| `renderer-unavailable` | PDF/PNG export found no Chrome, Edge, or Chromium. Install one or set `HTMLCRAFT_CHROMIUM`. |
 | `export-failed` | Rendering or the host export path failed. Read `message` for the actionable detail. |
 | `slide-not-found` | The slide id is wrong. Use `get_outline`. |
 | `target-not-found` | No element matches the target. Re-read the slide. |
@@ -392,6 +392,6 @@ relevant, `slideId`, `target`, `outputPath`, `currentRevision`, or `errors`.
 | `invalid-background` | Background must set exactly one non-empty color/gradient/image. |
 | `invalid-transition` | Transition must be none, fade, or slide. |
 | `editor-unavailable` | The built CLI was not found. Run `npm run build`. |
-| `editor-failed` | The spawned CLI exited with a non-zero code or was terminated by a signal before publishing a healthy session; the message names the exit code or signal. Run `htmlppt open <file> --no-browser` and read its stderr. |
-| `editor-timeout` | No healthy editor session appeared within 5 seconds; the spawned host was terminated. Check the editor build and try `htmlppt open`. |
+| `editor-failed` | The spawned CLI exited with a non-zero code or was terminated by a signal before publishing a healthy session; the message names the exit code or signal. Run `htmlcraft open <file> --no-browser` and read its stderr. |
+| `editor-timeout` | No healthy editor session appeared within 5 seconds; the spawned host was terminated. Check the editor build and try `htmlcraft open`. |
 | `internal` | Unexpected failure; the message carries the detail. |

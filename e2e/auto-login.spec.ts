@@ -49,7 +49,7 @@ async function isProcessAlive(pid: number): Promise<boolean> {
 
 /**
  * Reads the pid the CLI registered for this deck. A crash leaves this entry
- * and the credential on disk; only the token rotation in `htmlppt stop` makes
+ * and the credential on disk; only the token rotation in `htmlcraft stop` makes
  * a saved cookie stale.
  */
 async function registeredPid(home: string, deckPath: string): Promise<number> {
@@ -98,7 +98,7 @@ async function expectRecoveryPage(
   expect(response.status()).toBe(401);
   expect(response.headers()['content-type']).toContain('text/html');
   expect(body).toContain(DECK_FILE);
-  expect(body).toContain('htmlppt open');
+  expect(body).toContain('htmlcraft open');
   // The page must never echo a capability secret it is asking for.
   for (const token of tokens) {
     expect(body).not.toContain(token);
@@ -113,7 +113,7 @@ test(
     const directory = await mkdtemp(join(tmpdir(), 'htmlppt-auto-login-'));
     const home = join(directory, 'home');
     const deckPath = join(directory, DECK_FILE);
-    const env = { ...process.env, HTMLPPT_HOME: home };
+    const env = { ...process.env, HTMLCRAFT_HOME: home };
     const open = () => startCliHost(cliPath, directory, deckPath, { home });
     const contexts: BrowserContext[] = [];
     const hosts: StartedHost[] = [];
@@ -137,7 +137,7 @@ test(
       await expectEditor(page);
       const savedState = await context.storageState();
       const sessionCookie = savedState.cookies.find(
-        (cookie) => cookie.name === 'htmlppt_token' && cookie.httpOnly
+        (cookie) => cookie.name === 'htmlcraft_token' && cookie.httpOnly
       );
       expect(
         sessionCookie,
@@ -149,7 +149,7 @@ test(
       expect(cookieSeconds).toBeLessThanOrEqual(31 * 24 * 60 * 60);
       await context.close();
 
-      // Simulate a crash or reboot: kill the host without `htmlppt stop`, so
+      // Simulate a crash or reboot: kill the host without `htmlcraft stop`, so
       // its graceful shutdown and token rotation never run. The registry entry
       // and the credential survive on disk, and the registry still names a
       // dead pid.
@@ -240,7 +240,7 @@ test(
       await writeFile(deckPath, DECK_HTML, 'utf8');
       host = await startCliHost(cliPath, directory, deckPath, { home });
       // The host must register under this test's home, not an inherited
-      // HTMLPPT_HOME that would write into a developer's real home.
+      // HTMLCRAFT_HOME that would write into a developer's real home.
       expect(await registeredPid(home, deckPath)).toBeGreaterThan(0);
       const origin = new URL(host.url).origin;
       const token = new URL(host.url).searchParams.get('token');

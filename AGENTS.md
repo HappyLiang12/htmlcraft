@@ -1,4 +1,4 @@
-# Agent guide — htmlppt
+# Agent guide — htmlcraft
 
 Working rules for AI agents and humans collaborating on this repository.
 `CONTRIBUTING.md` covers environment and commands; this file covers process.
