@@ -8,7 +8,7 @@ local editor, adjusts layout and copy, and exports standalone HTML, PDF, or one
 PNG per slide. There is no project file, build step, or upload; the HTML file
 is the source of truth.
 
-![htmlcraft editor](https://raw.githubusercontent.com/HappyLiang12/htmlppt/main/docs/images/editor.png)
+![htmlcraft editor](https://raw.githubusercontent.com/HappyLiang12/htmlcraft/main/docs/images/editor.png)
 
 ## Install
 
@@ -84,7 +84,7 @@ exit codes.
 
 ## Editor
 
-![A chart selected in the editor](https://raw.githubusercontent.com/HappyLiang12/htmlppt/main/docs/images/editor-selection.png)
+![A chart selected in the editor](https://raw.githubusercontent.com/HappyLiang12/htmlcraft/main/docs/images/editor-selection.png)
 
 - **Slides:** add, duplicate, delete, thumbnail rail, drag-to-reorder sorter,
   slide counter, zoom.
@@ -197,7 +197,7 @@ for HTML/PDF and a directory for PNG. Host and MCP exports stay inside the deck
 directory, including through symlinks; the CLI refuses to overwrite the source
 deck.
 
-![Exported slide](https://raw.githubusercontent.com/HappyLiang12/htmlppt/main/docs/images/slide.png)
+![Exported slide](https://raw.githubusercontent.com/HappyLiang12/htmlcraft/main/docs/images/slide.png)
 
 ## Security
 

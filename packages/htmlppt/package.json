@@ -6,11 +6,11 @@
   "author": "htmlcraft contributors",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/HappyLiang12/htmlppt.git"
+    "url": "git+https://github.com/HappyLiang12/htmlcraft.git"
   },
-  "homepage": "https://github.com/HappyLiang12/htmlppt#readme",
+  "homepage": "https://github.com/HappyLiang12/htmlcraft#readme",
   "bugs": {
-    "url": "https://github.com/HappyLiang12/htmlppt/issues"
+    "url": "https://github.com/HappyLiang12/htmlcraft/issues"
   },
   "keywords": [
     "presentation",
