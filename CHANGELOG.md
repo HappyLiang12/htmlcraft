@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.1.1 - 2026-11-10
+
+### Fixed
+
+- Package metadata now points at the renamed repository
+  (`github.com/HappyLiang12/htmlcraft`); `0.1.0` still carried the old
+  `htmlppt` URLs.
+- The CLI `--version`, the host health payload, and the MCP `serverInfo`
+  report `0.1.1` instead of the stale `0.1.0`.
+
+### Changed
+
+- Releases publish through npm trusted publishing (GitHub OIDC) instead of a
+  long-lived `NPM_TOKEN`, and the published tarball carries npm provenance
+  attestations.
+
+No functional changes.
+
 ## 0.1.0 - 2026-11-07
 
 ### Added
