@@ -458,7 +458,7 @@ describe('htmlcraft cli', () => {
     const code = await runCli(['--version'], output.io);
 
     expect(code).toBe(0);
-    expect(output.stdout.join('\n')).toContain('0.1.0');
+    expect(output.stdout.join('\n')).toContain('0.1.1');
   });
 
   it('rejects a zero size with the size error', async () => {
@@ -3348,7 +3348,7 @@ describe('htmlcraft cli as a real process', () => {
       );
       const response = await server.waitForJsonRpc(1);
       expect(response.result).toMatchObject({
-        serverInfo: { name: 'htmlcraft', version: '0.1.0' }
+        serverInfo: { name: 'htmlcraft', version: '0.1.1' }
       });
       server.child.stdin.end();
       expect(await server.waitForExit(10_000)).toBe(0);

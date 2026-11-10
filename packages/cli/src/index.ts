@@ -461,7 +461,7 @@ export async function runCli(
   program
     .name('htmlcraft')
     .description('Visual editor and tooling for static HTML presentations')
-    .version('0.1.0')
+    .version('0.1.1')
     .exitOverride();
   program.configureOutput({
     writeOut: (text) => io.stdout(text.replace(/\n$/, '')),

@@ -1,6 +1,6 @@
 {
   "name": "@htmlppt/cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "bin": { "htmlcraft": "./dist/bin.js" },
@@ -13,15 +13,15 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@htmlppt/core": "0.1.0",
-    "@htmlppt/host": "0.1.0",
-    "@htmlppt/mcp": "0.1.0",
-    "@htmlppt/renderer": "0.1.0",
+    "@htmlppt/core": "0.1.1",
+    "@htmlppt/host": "0.1.1",
+    "@htmlppt/mcp": "0.1.1",
+    "@htmlppt/renderer": "0.1.1",
     "commander": "^13.0.0",
     "open": "^10.1.0"
   },
   "devDependencies": {
-    "@htmlppt/test-utils": "0.1.0",
+    "@htmlppt/test-utils": "0.1.1",
     "tsup": "^8.3.0",
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"

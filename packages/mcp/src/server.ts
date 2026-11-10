@@ -10,7 +10,7 @@ export function createMcpServer(
   options: CreateMcpServerOptions = {}
 ): McpServer {
   const server = new McpServer(
-    { name: 'htmlcraft', version: '0.1.0' },
+    { name: 'htmlcraft', version: '0.1.1' },
     { instructions: 'Use htmlcraft://contract and htmlcraft://authoring before editing a deck.' }
   );
   registerTools(server, options);

@@ -1,6 +1,6 @@
 {
   "name": "@htmlppt/host",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
@@ -14,13 +14,13 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@htmlppt/core": "0.1.0",
-    "@htmlppt/renderer": "0.1.0",
+    "@htmlppt/core": "0.1.1",
+    "@htmlppt/renderer": "0.1.1",
     "@hono/node-server": "^2.1.3",
     "hono": "^4.6.0"
   },
   "devDependencies": {
-    "@htmlppt/test-utils": "0.1.0",
+    "@htmlppt/test-utils": "0.1.1",
     "tsup": "^8.3.0",
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"
