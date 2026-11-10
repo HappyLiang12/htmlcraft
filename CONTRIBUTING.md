@@ -211,18 +211,24 @@ request instead of merging locally.
 
 Releases are manual and never run from a pull request:
 
-1. In repository settings, create the environment `npm-publish` and require at
-   least one reviewer. Add `NPM_TOKEN` as an environment secret (preferred) or
-   repository secret: a granular token scoped to the `htmlcraft` package with
-   publish permission, 2FA bypass, and a short expiry. Prefer npm trusted
-   publishing once it is configured on npmjs.com; then delete the token and
-   keep `id-token: write` for provenance.
+1. Keep the environment `npm-publish` in repository settings with at least one
+   required reviewer. Configure a trusted publisher on npmjs.com for
+   `htmlcraft`: provider GitHub Actions, organization or user `HappyLiang12`,
+   repository `htmlcraft`, workflow `release.yml`, environment `npm-publish`,
+   and direct `npm publish` allowed. The workflow uses GitHub OIDC
+   (`id-token: write`) and stores no long-lived npm token. A new trusted
+   publisher expires if its first publish does not succeed within two days.
 2. Merge the release branch to `main` and wait for the CI matrix to pass.
 3. Run the `Release` workflow from `main`. `dry_run` defaults to `true`; review
    the dry-run log before dispatching with it disabled.
 4. The job refuses to publish an already-published version, runs
    `npm audit --omit=dev`, verifies the generated license notices, and runs the
-   package smoke test before `npm publish --provenance`.
+   package smoke test before `npm publish --provenance`. npm exchanges the
+   GitHub OIDC token for a short-lived publish credential and attaches
+   provenance automatically.
+
+`0.1.0` was the one-time bootstrap publish made before the trusted publisher
+existed; every later release goes through OIDC.
 
 Tags, GitHub releases, and npm publishes need explicit approval for each
 release; a previous approval does not carry over.

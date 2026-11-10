@@ -17,7 +17,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     # Create this environment in Settings > Environments with required
-    # reviewers; the job pauses there before it can use NPM_TOKEN.
+    # reviewers; the job pauses there before it can use the OIDC token.
     environment: npm-publish
     timeout-minutes: 30
     steps:
@@ -46,16 +46,12 @@ jobs:
             echo "htmlcraft@$VERSION is already published"
             exit 1
           fi
-      # The first publish uses the NPM_TOKEN secret. After trusted publishing is
-      # configured on npmjs.com, remove these NODE_AUTH_TOKEN lines and the
-      # secret; the id-token permission above stays for provenance.
+      # Trusted publishing: npm detects the GitHub Actions OIDC environment and
+      # exchanges the id-token for a short-lived publish credential. The
+      # trusted publisher on npmjs.com must name this workflow and environment.
       - name: Publish dry run
         if: inputs.dry_run
         run: npm publish -w htmlcraft --access public --dry-run
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Publish with provenance
         if: ${{ !inputs.dry_run }}
         run: npm publish -w htmlcraft --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
