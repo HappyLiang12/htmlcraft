@@ -28,7 +28,7 @@ import {
   makeTempDir
 } from '@htmlppt/test-utils';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
-import { formatHostStartError, runCli } from '../src/index.js';
+import { formatHostStartError, runCli, shouldCheckForUpdates } from '../src/index.js';
 
 function capture() {
   const stdout: string[] = [];
@@ -461,6 +461,74 @@ describe('htmlcraft cli', () => {
     expect(output.stdout.join('\n')).toContain('0.1.1');
   });
 
+  it('checks for updates only on an interactive terminal and outside mcp', () => {
+    expect(shouldCheckForUpdates(['new'], true, {})).toBe(true);
+    expect(shouldCheckForUpdates(['mcp'], true, {})).toBe(false);
+    expect(shouldCheckForUpdates(['new'], false, {})).toBe(false);
+    expect(
+      shouldCheckForUpdates(['new'], true, { HTMLCRAFT_NO_UPDATE_CHECK: '1' })
+    ).toBe(false);
+    expect(shouldCheckForUpdates(['new'], true, { CI: 'true' })).toBe(false);
+  });
+
+  it('prints the update notice to stderr after a command', async () => {
+    const home = await makeTempDir('htmlcraft-update-home-');
+    const previousHome = process.env.HTMLCRAFT_HOME;
+    process.env.HTMLCRAFT_HOME = home;
+    try {
+      await writeFile(
+        join(home, 'update-check.json'),
+        JSON.stringify({
+          checkedAt: new Date().toISOString(),
+          latestVersion: '9.9.9',
+          notifiedVersion: '0.0.0'
+        })
+      );
+      const output = capture();
+      const cwd = await makeTempDir('htmlppt-cli-');
+      const code = await runCli(['new', 'notice.html'], {
+        cwd,
+        tty: true,
+        ...output.io
+      });
+      expect(code).toBe(0);
+      expect(output.stderr.join('\n')).toContain(
+        'htmlcraft 9.9.9 is available'
+      );
+      expect(output.stdout.join('\n')).not.toContain('9.9.9');
+    } finally {
+      if (previousHome === undefined) delete process.env.HTMLCRAFT_HOME;
+      else process.env.HTMLCRAFT_HOME = previousHome;
+      await rm(home, { recursive: true, force: true });
+    }
+  });
+
+  it('stays quiet without a terminal for the update notice', async () => {
+    const home = await makeTempDir('htmlcraft-update-home-');
+    const previousHome = process.env.HTMLCRAFT_HOME;
+    process.env.HTMLCRAFT_HOME = home;
+    try {
+      await writeFile(
+        join(home, 'update-check.json'),
+        JSON.stringify({
+          checkedAt: new Date().toISOString(),
+          latestVersion: '9.9.9',
+          notifiedVersion: '0.0.0'
+        })
+      );
+      const output = capture();
+      const cwd = await makeTempDir('htmlppt-cli-');
+      expect(
+        await runCli(['new', 'quiet.html'], { cwd, tty: false, ...output.io })
+      ).toBe(0);
+      expect(output.stderr.join('\n')).not.toContain('is available');
+    } finally {
+      if (previousHome === undefined) delete process.env.HTMLCRAFT_HOME;
+      else process.env.HTMLCRAFT_HOME = previousHome;
+      await rm(home, { recursive: true, force: true });
+    }
+  });
+
   it('rejects a zero size with the size error', async () => {
     const cwd = await makeTempDir('htmlppt-cli-');
     const output = capture();
@@ -715,7 +783,8 @@ function cliEnvironment(workspace: CliWorkspace): NodeJS.ProcessEnv {
   return {
     ...process.env,
     HTMLCRAFT_HOME: workspace.home,
-    HTMLCRAFT_EDITOR_DIR: workspace.editorDir
+    HTMLCRAFT_EDITOR_DIR: workspace.editorDir,
+    HTMLCRAFT_NO_UPDATE_CHECK: '1'
   };
 }
 
