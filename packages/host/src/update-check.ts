@@ -104,16 +104,25 @@ export async function checkForUpdate(
   ) {
     return null;
   }
-  const notice = updateNotice(options.currentVersion, cache.latestVersion);
-  await writeCache(cacheFile, {
-    ...cache,
-    notifiedVersion: cache.latestVersion
-  });
   return {
     currentVersion: options.currentVersion,
     latestVersion: cache.latestVersion,
-    notice
+    notice: updateNotice(options.currentVersion, cache.latestVersion)
   };
+}
+
+export async function markUpdateNotified(
+  result: UpdateCheckResult,
+  options: Pick<UpdateCheckOptions, 'cacheFile' | 'env'> = {}
+): Promise<void> {
+  const cacheFile =
+    options.cacheFile ?? updateCheckCacheFile(options.env ?? process.env);
+  const cache = await readCache(cacheFile);
+  if (!cache || cache.latestVersion !== result.latestVersion) return;
+  await writeCache(cacheFile, {
+    ...cache,
+    notifiedVersion: result.latestVersion
+  });
 }
 
 export function announceUpdateOn(
@@ -121,8 +130,10 @@ export function announceUpdateOn(
   options: UpdateCheckOptions
 ): void {
   void checkForUpdate(options)
-    .then((result) => {
-      if (result) stream.write(`${result.notice}\n`);
+    .then(async (result) => {
+      if (!result) return;
+      stream.write(`${result.notice}\n`);
+      await markUpdateNotified(result, options);
     })
     .catch(() => {});
 }

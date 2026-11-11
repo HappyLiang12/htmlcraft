@@ -500,6 +500,14 @@ describe('htmlcraft cli', () => {
         'htmlcraft 9.9.9 is available'
       );
       expect(output.stdout.join('\n')).not.toContain('9.9.9');
+      const again = capture();
+      const againCode = await runCli(['new', 'again.html'], {
+        cwd,
+        tty: true,
+        ...again.io
+      });
+      expect(againCode).toBe(0);
+      expect(again.stderr.join('\n')).not.toContain('is available');
     } finally {
       if (previousHome === undefined) delete process.env.HTMLCRAFT_HOME;
       else process.env.HTMLCRAFT_HOME = previousHome;
