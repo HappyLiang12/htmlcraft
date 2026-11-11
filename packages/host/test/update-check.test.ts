@@ -245,9 +245,11 @@ describe('update check @feature:update-check', () => {
     await vi.waitFor(() => {
       expect(chunks.join('')).toContain('htmlcraft 0.2.0 is available');
     });
-    const cache = JSON.parse(
-      await readFile(join(home, 'update-check.json'), 'utf8')
-    );
-    expect(cache.notifiedVersion).toBe('0.2.0');
+    await vi.waitFor(async () => {
+      const cache = JSON.parse(
+        await readFile(join(home, 'update-check.json'), 'utf8')
+      );
+      expect(cache.notifiedVersion).toBe('0.2.0');
+    });
   });
 });
