@@ -7,9 +7,14 @@
 ## Goal
 
 Keep an installed `htmlcraft` current without modifying the user's machine on
-its own. When a newer release exists on npm, the CLI and the MCP server print a
-one-line notice with the upgrade command. The packaged skill teaches agents to
-run the latest release and to ask before upgrading.
+its own. The CLI and the MCP server check the public registry at most once per
+24 hours and print a one-line notice when a newer release exists. Nothing is
+installed or upgraded automatically: the notice is informational, and the
+packaged skill asks the person before running any upgrade command.
+
+**Consent invariant:** no code path runs `npm install`, `npm update`,
+`npx htmlcraft@latest`, or any other upgrade. The only output is a stderr
+notice; the skill's upgrade step requires the person's explicit agreement.
 
 ## Non-goals
 
@@ -49,17 +54,22 @@ Behavior:
 - Request `GET https://registry.npmjs.org/htmlcraft/latest` with
   `Accept: application/json` and an abort timeout of 1000 ms.
 - Cache in `${HTMLCRAFT_HOME:-~/.htmlcraft}/update-check.json`:
-  `{ "checkedAt": "<ISO-8601>", "latestVersion": "x.y.z" }`.
-- TTL 24 h. A fresh cache skips the network. An expired or corrupt cache is
+  `{ "checkedAt": "<ISO-8601>", "latestVersion": "x.y.z", "notifiedVersion": "x.y.z" }`.
+- TTL 24 h from `checkedAt`. A fresh cache skips the network entirely, so the
+  registry is contacted at most once per day; an expired or corrupt cache is
   replaced after a successful fetch. Writes are atomic (temp file + rename) and
   best-effort.
+- The notice prints at most once per version: after it is printed,
+  `notifiedVersion` is persisted, and later runs in the same 24 h window stay
+  quiet. A newer release prints again. Repeated CLI invocations therefore never
+  spam the same reminder.
 - Comparisons are numeric `major.minor.patch`; pre-release and build suffixes
   are ignored. A malformed registry version or any fetch error returns `null`
   and never throws.
 - The cache is written even when the latest version is not newer, so a second
   run the same day does not re-request.
 - Opt-outs: any non-empty `HTMLCRAFT_NO_UPDATE_CHECK`, or a non-empty `CI`.
-  A cache hit that is already fresh still honors the opt-out (no notice).
+  A fresh cache still honors the opt-out (no notice).
 
 Notice text, one line on stderr:
 
@@ -114,7 +124,8 @@ In `skills/htmlcraft/SKILL.md`:
 - Host unit tests (`@feature:update-check`): version comparison; newer, equal,
   and older; fresh cache avoids `fetch`; stale cache fetches; corrupt cache is
   ignored; fetch failure and timeout are silent; opt-out variables; notice
-  content; atomic cache write; no throw on malformed JSON.
+  content; the notice prints once per version and stays quiet on later runs;
+  atomic cache write; no throw on malformed JSON.
 - CLI tests: TTY gating, `mcp` skip, opt-out, and one notice-print case using a
   temp `HTMLCRAFT_HOME` and an injected checker result.
 - MCP test: the notice never reaches stdout and the initialize handshake is
