@@ -15,6 +15,9 @@
 - Releases publish through npm trusted publishing (GitHub OIDC) instead of a
   long-lived `NPM_TOKEN`, and the published tarball carries npm provenance
   attestations.
+- The CLI and MCP server print a once-a-day update notice (one message per
+  version) and never upgrade themselves. The packaged skill asks the person to
+  choose npx, a global install, or no install, and asks before any upgrade.
 
 No functional changes.
 

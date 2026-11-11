@@ -30,8 +30,9 @@ bundle them. Before the first deck operation, ask the person which setup they
 prefer:
 
 1. **MCP server through npx (no global install).** Register
-   `npx -y htmlcraft mcp` as a stdio server in the agent's MCP configuration.
-   The first run downloads the package; Node.js 20 or newer is required.
+   `npx -y htmlcraft@latest mcp` as a stdio server in the agent's MCP
+   configuration. The first run downloads the package; Node.js 20 or newer is
+   required.
 2. **Global install.** Run `npm install -g htmlcraft`, then use
    `htmlcraft-mcp`, `htmlcraft mcp`, or the `htmlcraft` CLI.
 3. **No install.** Author the HTML by hand from [references/contract.md](
@@ -42,6 +43,14 @@ prefer:
 PDF and PNG export need a local Chrome, Edge, or Chromium; no browser is
 bundled. Do not install packages or change MCP configuration without the
 person's agreement.
+
+## Keep the tools current
+
+The CLI and MCP server print a one-line notice to stderr when a newer release
+exists. They never update themselves. If a notice appears, or the person asks,
+compare `npm view htmlcraft version` with `htmlcraft --version` and offer
+`npm install -g htmlcraft@latest`. Run an upgrade only after the person agrees.
+With npx, `npx -y htmlcraft@latest ...` already uses the newest release.
 
 ## Choose a workflow
 

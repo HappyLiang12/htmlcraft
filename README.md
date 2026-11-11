@@ -23,6 +23,14 @@ npx -y htmlcraft --help
 From a source checkout, run `npm ci && npm run build` first, then use the same
 commands through `npx htmlcraft`.
 
+## Updates
+
+The CLI and MCP server check the public npm registry at most once a day and
+print a one-line notice when a newer release exists. Nothing is installed or
+upgraded automatically. Set `HTMLCRAFT_NO_UPDATE_CHECK=1` (or run in CI) to
+disable the check; the only request is a `GET` for the package's latest version
+and no identifiers are sent.
+
 ## Quick start
 
 ```bash
@@ -56,7 +64,7 @@ Add the stdio server to an MCP client:
   "mcpServers": {
     "htmlcraft": {
       "command": "npx",
-      "args": ["-y", "htmlcraft", "mcp"]
+      "args": ["-y", "htmlcraft@latest", "mcp"]
     }
   }
 }
