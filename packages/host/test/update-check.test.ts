@@ -6,6 +6,7 @@ import {
   announceUpdateOn,
   checkForUpdate,
   compareVersions,
+  markUpdateNotified,
   updateCheckCacheFile,
   updateNotice
 } from '../src/update-check.js';
@@ -155,21 +156,37 @@ describe('update check @feature:update-check', () => {
     const home = await tempHome();
     const cacheFile = join(home, 'update-check.json');
     const fetchImpl = vi.fn(async () => ok('0.2.0'));
-    const first = await checkForUpdate({
+    const options = {
       currentVersion: '0.1.1',
       cacheFile,
       env: {},
       fetchImpl
-    });
-    const second = await checkForUpdate({
-      currentVersion: '0.1.1',
-      cacheFile,
-      env: {},
-      fetchImpl
-    });
+    };
+    const first = await checkForUpdate(options);
+    await markUpdateNotified(first!, { cacheFile });
+    const second = await checkForUpdate(options);
     expect(first?.latestVersion).toBe('0.2.0');
     expect(second).toBeNull();
     expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not consume the notice until the caller delivers it', async () => {
+    const home = await tempHome();
+    const cacheFile = join(home, 'update-check.json');
+    const fetchImpl = vi.fn(async () => ok('0.2.0'));
+    const options = {
+      currentVersion: '0.1.1',
+      cacheFile,
+      env: {},
+      fetchImpl
+    };
+    const first = await checkForUpdate(options);
+    const second = await checkForUpdate(options);
+    expect(first?.notice).toContain('htmlcraft 0.2.0 is available');
+    expect(second?.notice).toBe(first?.notice);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    await markUpdateNotified(second!, { cacheFile });
+    await expect(checkForUpdate(options)).resolves.toBeNull();
   });
 
   it('ignores a malformed notified version instead of suppressing the notice', async () => {
@@ -192,6 +209,7 @@ describe('update check @feature:update-check', () => {
     });
     expect(result?.latestVersion).toBe('0.2.0');
     expect(fetchImpl).not.toHaveBeenCalled();
+    await markUpdateNotified(result!, { cacheFile });
     const cache = JSON.parse(await readFile(cacheFile, 'utf8'));
     expect(cache.notifiedVersion).toBe('0.2.0');
   });
@@ -199,12 +217,13 @@ describe('update check @feature:update-check', () => {
   it('writes the cache atomically with the notified version', async () => {
     const home = await tempHome();
     const cacheFile = join(home, 'update-check.json');
-    await checkForUpdate({
+    const result = await checkForUpdate({
       currentVersion: '0.1.1',
       cacheFile,
       env: {},
       fetchImpl: vi.fn(async () => ok('0.2.0'))
     });
+    await markUpdateNotified(result!, { cacheFile });
     const cache = JSON.parse(await readFile(cacheFile, 'utf8'));
     expect(cache.latestVersion).toBe('0.2.0');
     expect(cache.notifiedVersion).toBe('0.2.0');
@@ -226,5 +245,9 @@ describe('update check @feature:update-check', () => {
     await vi.waitFor(() => {
       expect(chunks.join('')).toContain('htmlcraft 0.2.0 is available');
     });
+    const cache = JSON.parse(
+      await readFile(join(home, 'update-check.json'), 'utf8')
+    );
+    expect(cache.notifiedVersion).toBe('0.2.0');
   });
 });

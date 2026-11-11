@@ -30,6 +30,7 @@ import {
   canonicalDeckPath,
   checkForUpdate,
   listSessions,
+  markUpdateNotified,
   readCredential,
   removeCredential,
   removeSessionIfUnchanged,
@@ -1216,7 +1217,10 @@ export async function runCli(
 
   if (updateCheck) {
     const result = await waitForPromise(updateCheck, CLI_UPDATE_WAIT_MS);
-    if (result?.notice) io.stderr(result.notice);
+    if (result?.notice) {
+      io.stderr(result.notice);
+      await markUpdateNotified(result);
+    }
   }
 
   return exitCode;

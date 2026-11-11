@@ -25,6 +25,7 @@ export {
   announceUpdateOn,
   checkForUpdate,
   compareVersions,
+  markUpdateNotified,
   updateCheckCacheFile,
   updateNotice,
   UPDATE_CHECK_TIMEOUT_MS,

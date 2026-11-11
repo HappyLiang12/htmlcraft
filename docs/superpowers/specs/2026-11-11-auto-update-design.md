@@ -60,10 +60,12 @@ Behavior:
   corrupt cache is replaced only after a successful fetch, so a failed fetch
   is retried on the next run. Writes are atomic (temp file + rename) and
   best-effort.
-- The notice prints at most once per version: after it is printed,
-  `notifiedVersion` is persisted, and later runs in the same 24 h window stay
-  quiet. A newer release prints again. Repeated CLI invocations therefore never
-  spam the same reminder.
+- The notice prints at most once per version. `checkForUpdate` never marks a
+  notice as delivered; the caller persists `notifiedVersion` only after it
+  writes the notice (`markUpdateNotified`). A check whose result is abandoned
+  — the CLI's 250 ms wait expiring — therefore does not consume the reminder,
+  and the next run reads the fresh cache and prints it immediately. A newer
+  release prints again. Repeated CLI invocations never spam the same reminder.
 - Comparisons are numeric `major.minor.patch`; pre-release and build suffixes
   are ignored. A malformed registry version or any fetch error returns `null`
   and never throws.
