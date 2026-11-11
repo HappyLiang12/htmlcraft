@@ -33,7 +33,9 @@ Example MCP client configuration:
 
 Transport: **stdio only**. One JSON-RPC message stream goes in and out; stdout
 must stay pure JSON-RPC, so diagnostics are written to stderr. There is no HTTP
-listener.
+listener. The stdio server may also print a one-line update notice to stderr (at
+most once per version per day); it never writes the notice to stdout. Disable it
+with `HTMLCRAFT_NO_UPDATE_CHECK=1` or by running in CI.
 
 ## Modes
 
