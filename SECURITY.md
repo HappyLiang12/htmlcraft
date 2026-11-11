@@ -4,10 +4,11 @@ htmlcraft is a local-first tool. It has no accounts, cloud service, telemetry, o
 remote API of its own. The security model assumes a single user on a trusted
 machine opening untrusted deck HTML produced by an agent or another person.
 
-The CLI and MCP server make one public, unauthenticated `GET` to the npm registry
-at most once per 24 hours to look up the latest version. No identifiers are sent,
-nothing is installed automatically, and `HTMLCRAFT_NO_UPDATE_CHECK=1` or a CI
-environment disables it.
+When its cached result is older than 24 hours, the CLI or MCP server makes one
+public, unauthenticated `GET` to the npm registry to look up the latest version;
+a failed check is retried on the next run. No identifiers are sent, nothing is
+installed automatically, and `HTMLCRAFT_NO_UPDATE_CHECK=1` or a CI environment
+disables it.
 
 ## Threat model
 

@@ -25,11 +25,12 @@ commands through `npx htmlcraft`.
 
 ## Updates
 
-The CLI and MCP server check the public npm registry at most once a day and
-print a one-line notice when a newer release exists. Nothing is installed or
-upgraded automatically. Set `HTMLCRAFT_NO_UPDATE_CHECK=1` (or run in CI) to
-disable the check; the only request is a `GET` for the package's latest version
-and no identifiers are sent.
+The CLI and MCP server check the public npm registry at most once a day — when
+the cached result is older than 24 hours; a failed check is retried on the next
+run — and print a one-line notice when a newer release exists. Nothing is
+installed or upgraded automatically. Set `HTMLCRAFT_NO_UPDATE_CHECK=1` (or run
+in CI) to disable the check; the only request is a `GET` for the package's
+latest version and no identifiers are sent.
 
 ## Quick start
 
