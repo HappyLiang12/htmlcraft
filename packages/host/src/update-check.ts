@@ -181,7 +181,8 @@ async function readCache(file: string): Promise<UpdateCache | null> {
       checkedAt: value.checkedAt,
       latestVersion: value.latestVersion,
       notifiedVersion:
-        typeof value.notifiedVersion === 'string'
+        typeof value.notifiedVersion === 'string' &&
+        /^\d+\.\d+\.\d+/.test(value.notifiedVersion)
           ? value.notifiedVersion
           : undefined
     };
