@@ -877,7 +877,8 @@ beforeAll(async () => {
     env: {
       ...getDefaultEnvironment(),
       HTMLCRAFT_HOME: home,
-      HTMLCRAFT_EDITOR_DIR: editorDir
+      HTMLCRAFT_EDITOR_DIR: editorDir,
+      HTMLCRAFT_NO_UPDATE_CHECK: '1'
     },
     stderr: 'pipe'
   });
