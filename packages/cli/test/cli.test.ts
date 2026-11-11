@@ -474,7 +474,11 @@ describe('htmlcraft cli', () => {
   it('prints the update notice to stderr after a command', async () => {
     const home = await makeTempDir('htmlcraft-update-home-');
     const previousHome = process.env.HTMLCRAFT_HOME;
+    const previousCi = process.env.CI;
+    const previousOptOut = process.env.HTMLCRAFT_NO_UPDATE_CHECK;
     process.env.HTMLCRAFT_HOME = home;
+    delete process.env.CI;
+    delete process.env.HTMLCRAFT_NO_UPDATE_CHECK;
     try {
       await writeFile(
         join(home, 'update-check.json'),
@@ -499,6 +503,10 @@ describe('htmlcraft cli', () => {
     } finally {
       if (previousHome === undefined) delete process.env.HTMLCRAFT_HOME;
       else process.env.HTMLCRAFT_HOME = previousHome;
+      if (previousCi === undefined) delete process.env.CI;
+      else process.env.CI = previousCi;
+      if (previousOptOut === undefined) delete process.env.HTMLCRAFT_NO_UPDATE_CHECK;
+      else process.env.HTMLCRAFT_NO_UPDATE_CHECK = previousOptOut;
       await rm(home, { recursive: true, force: true });
     }
   });

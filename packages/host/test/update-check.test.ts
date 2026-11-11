@@ -45,6 +45,7 @@ describe('update check @feature:update-check', () => {
     const result = await checkForUpdate({
       currentVersion: '0.1.1',
       cacheFile: join(home, 'update-check.json'),
+      env: {},
       fetchImpl
     });
     expect(result?.latestVersion).toBe('0.2.0');
@@ -68,6 +69,7 @@ describe('update check @feature:update-check', () => {
     const result = await checkForUpdate({
       currentVersion: '0.1.1',
       cacheFile,
+      env: {},
       fetchImpl
     });
     expect(result?.latestVersion).toBe('9.9.9');
@@ -86,6 +88,7 @@ describe('update check @feature:update-check', () => {
     const result = await checkForUpdate({
       currentVersion: '0.1.1',
       cacheFile,
+      env: {},
       fetchImpl
     });
     expect(result?.latestVersion).toBe('0.3.0');
@@ -101,6 +104,7 @@ describe('update check @feature:update-check', () => {
     const result = await checkForUpdate({
       currentVersion: '0.1.1',
       cacheFile,
+      env: {},
       fetchImpl
     });
     expect(result?.latestVersion).toBe('0.2.0');
@@ -117,6 +121,7 @@ describe('update check @feature:update-check', () => {
     const result = await checkForUpdate({
       currentVersion: '0.1.1',
       cacheFile,
+      env: {},
       fetchImpl: vi.fn(async () => {
         throw new Error('offline');
       })
@@ -150,11 +155,45 @@ describe('update check @feature:update-check', () => {
     const home = await tempHome();
     const cacheFile = join(home, 'update-check.json');
     const fetchImpl = vi.fn(async () => ok('0.2.0'));
-    const first = await checkForUpdate({ currentVersion: '0.1.1', cacheFile, fetchImpl });
-    const second = await checkForUpdate({ currentVersion: '0.1.1', cacheFile, fetchImpl });
+    const first = await checkForUpdate({
+      currentVersion: '0.1.1',
+      cacheFile,
+      env: {},
+      fetchImpl
+    });
+    const second = await checkForUpdate({
+      currentVersion: '0.1.1',
+      cacheFile,
+      env: {},
+      fetchImpl
+    });
     expect(first?.latestVersion).toBe('0.2.0');
     expect(second).toBeNull();
     expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores a malformed notified version instead of suppressing the notice', async () => {
+    const home = await tempHome();
+    const cacheFile = join(home, 'update-check.json');
+    await writeFile(
+      cacheFile,
+      JSON.stringify({
+        checkedAt: new Date().toISOString(),
+        latestVersion: '0.2.0',
+        notifiedVersion: 'not-a-version'
+      })
+    );
+    const fetchImpl = vi.fn(async () => ok('0.2.0'));
+    const result = await checkForUpdate({
+      currentVersion: '0.1.1',
+      cacheFile,
+      env: {},
+      fetchImpl
+    });
+    expect(result?.latestVersion).toBe('0.2.0');
+    expect(fetchImpl).not.toHaveBeenCalled();
+    const cache = JSON.parse(await readFile(cacheFile, 'utf8'));
+    expect(cache.notifiedVersion).toBe('0.2.0');
   });
 
   it('writes the cache atomically with the notified version', async () => {
@@ -163,6 +202,7 @@ describe('update check @feature:update-check', () => {
     await checkForUpdate({
       currentVersion: '0.1.1',
       cacheFile,
+      env: {},
       fetchImpl: vi.fn(async () => ok('0.2.0'))
     });
     const cache = JSON.parse(await readFile(cacheFile, 'utf8'));
@@ -179,6 +219,7 @@ describe('update check @feature:update-check', () => {
       {
         currentVersion: '0.1.1',
         cacheFile: join(home, 'update-check.json'),
+        env: {},
         fetchImpl: async () => ok('0.2.0')
       }
     );
