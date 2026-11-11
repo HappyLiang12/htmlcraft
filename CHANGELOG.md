@@ -19,7 +19,8 @@
   version) and never upgrade themselves. The packaged skill asks the person to
   choose npx, a global install, or no install, and asks before any upgrade.
 
-No functional changes.
+The only runtime behaviour change is the opt-out-able update notice; deck
+editing, the deck format, and the MCP surface are unchanged.
 
 ## 0.1.0 - 2026-11-07
 
