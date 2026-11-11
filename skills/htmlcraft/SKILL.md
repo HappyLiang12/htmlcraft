@@ -23,6 +23,26 @@ truth: there is no sidecar project file.
 Do not use this skill for `.pptx`/PowerPoint files, video, or real-time
 collaboration. v1 supports static HTML decks and HTML, PDF, and PNG export.
 
+## Setup: ask before installing
+
+The deck tools are the separate MIT package `htmlcraft`; this skill does not
+bundle them. Before the first deck operation, ask the person which setup they
+prefer:
+
+1. **MCP server through npx (no global install).** Register
+   `npx -y htmlcraft mcp` as a stdio server in the agent's MCP configuration.
+   The first run downloads the package; Node.js 20 or newer is required.
+2. **Global install.** Run `npm install -g htmlcraft`, then use
+   `htmlcraft-mcp`, `htmlcraft mcp`, or the `htmlcraft` CLI.
+3. **No install.** Author the HTML by hand from [references/contract.md](
+   references/contract.md) and [references/authoring.md](
+   references/authoring.md). The deck still opens in a browser, but
+   `validate`, the visual editor, and PDF/PNG export are unavailable.
+
+PDF and PNG export need a local Chrome, Edge, or Chromium; no browser is
+bundled. Do not install packages or change MCP configuration without the
+person's agreement.
+
 ## Choose a workflow
 
 **MCP-first (preferred when a tool-capable agent is available).** Use the
@@ -33,7 +53,11 @@ surface is documented in [references/mcp-tools.md](references/mcp-tools.md).
 **CLI fallback.** Use `htmlcraft` when MCP is not available or a script needs an
 exit code. The CLI talks to the same files and contract.
 
-Both workflows are safe to mix: MCP writes are atomic and revision-checked.
+**No-install fallback.** When the person declines both installs, write the HTML
+directly from the contract and authoring references, skip tool calls, and say
+which capabilities are unavailable.
+
+Both tool workflows are safe to mix: MCP writes are atomic and revision-checked.
 The editor receives host revision events over SSE. A clean editor applies
 external or MCP changes automatically; unsaved edits surface a conflict banner
 with reload or overwrite choices. A save based on an old revision returns
