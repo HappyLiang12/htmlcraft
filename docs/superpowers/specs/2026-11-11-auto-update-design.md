@@ -55,9 +55,10 @@ Behavior:
   `Accept: application/json` and an abort timeout of 1000 ms.
 - Cache in `${HTMLCRAFT_HOME:-~/.htmlcraft}/update-check.json`:
   `{ "checkedAt": "<ISO-8601>", "latestVersion": "x.y.z", "notifiedVersion": "x.y.z" }`.
-- TTL 24 h from `checkedAt`. A fresh cache skips the network entirely, so the
-  registry is contacted at most once per day; an expired or corrupt cache is
-  replaced after a successful fetch. Writes are atomic (temp file + rename) and
+- TTL 24 h from `checkedAt`. A fresh cache skips the network entirely, so a
+  successful check contacts the registry at most once per day; an expired or
+  corrupt cache is replaced only after a successful fetch, so a failed fetch
+  is retried on the next run. Writes are atomic (temp file + rename) and
   best-effort.
 - The notice prints at most once per version: after it is printed,
   `notifiedVersion` is persisted, and later runs in the same 24 h window stay
@@ -136,9 +137,9 @@ In `skills/htmlcraft/SKILL.md`:
 
 ## Risks
 
-- The check adds at most one registry request per 24 h per machine and up to
-  250 ms to the first CLI run of the day when the request is slow; later runs
-  read the cache.
+- A successful check adds one registry request per 24 h per machine; a failed
+  check retries on the next run. A slow request adds up to 250 ms to the first
+  CLI run after the cache expires; later runs read the cache.
 - If the trusted-publisher configuration expires while this feature is built,
   the user re-adds the trusted publisher on npmjs.com and the validation
   publish restarts its two-day window.
