@@ -24,6 +24,7 @@
     { "id": "play-fit", "spec": "QA fixes 2026-10-27", "status": "active", "tests": ["@feature:play-fit"] },
     { "id": "text-entry", "spec": "QA fixes 2026-10-27", "status": "active", "tests": ["@feature:text-entry"] },
     { "id": "editor-canvas-fit", "spec": "Editor canvas fit 2026-10-28", "status": "active", "tests": ["@feature:editor-canvas-fit"] },
-    { "id": "component-dragging", "spec": "Component dragging 2026-10-28", "status": "active", "tests": ["@feature:component-dragging"] }
+    { "id": "component-dragging", "spec": "Component dragging 2026-10-28", "status": "active", "tests": ["@feature:component-dragging"] },
+    { "id": "update-check", "spec": "Auto-update notice 2026-11-11", "status": "active", "tests": ["@feature:update-check"] }
   ]
 }

@@ -21,3 +21,18 @@ export {
   writeSession
 } from './sessions.js';
 export type { SessionEntry } from './sessions.js';
+export {
+  announceUpdateOn,
+  checkForUpdate,
+  compareVersions,
+  updateCheckCacheFile,
+  updateNotice,
+  UPDATE_CHECK_TIMEOUT_MS,
+  UPDATE_CHECK_TTL_MS,
+  UPDATE_CHECK_URL
+} from './update-check.js';
+export type {
+  UpdateCheckOptions,
+  UpdateCheckResult,
+  UpdateFetch
+} from './update-check.js';
