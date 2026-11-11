@@ -242,6 +242,7 @@ async function main() {
     const childEnv = {
       ...process.env,
       HTMLCRAFT_HOME: homeDir,
+      HTMLCRAFT_NO_UPDATE_CHECK: '1',
       // Force the packaged editor lookup; the temp project has no workspace.
       HTMLCRAFT_EDITOR_DIR: undefined,
       HTMLCRAFT_MCP_MODE: undefined
