@@ -28,6 +28,7 @@ import {
 import {
   canonicalCredentialFile,
   canonicalDeckPath,
+  checkForUpdate,
   listSessions,
   readCredential,
   removeCredential,
@@ -47,13 +48,17 @@ export interface CliIO {
   cwd: string;
   stdout: (line: string) => void;
   stderr: (line: string) => void;
+  tty?: boolean;
 }
+
+export const CLI_VERSION = '0.1.1';
 
 const DEFAULT_STREAMS = {
   stdout: (line: string) => console.log(line),
   stderr: (line: string) => console.error(line)
 };
 
+const CLI_UPDATE_WAIT_MS = 250;
 const STOP_TIMEOUT_MS = 5_000;
 const STOP_POLL_INTERVAL_MS = 100;
 // The recorded port is the deck's bookmark address, but a host that was just
@@ -61,6 +66,39 @@ const STOP_POLL_INTERVAL_MS = 100;
 // replacement retries the same address before giving up on it.
 const STICKY_PORT_ATTEMPTS = 5;
 const STICKY_PORT_RETRY_DELAY_MS = 100;
+
+export function shouldCheckForUpdates(
+  argv: string[],
+  tty: boolean,
+  env: NodeJS.ProcessEnv = process.env
+): boolean {
+  return (
+    tty &&
+    argv[0] !== 'mcp' &&
+    !env.HTMLCRAFT_NO_UPDATE_CHECK &&
+    !env.CI
+  );
+}
+
+function waitForPromise<T>(
+  promise: Promise<T>,
+  timeoutMs: number
+): Promise<T | null> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(null), timeoutMs);
+    timer.unref();
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      () => {
+        clearTimeout(timer);
+        resolve(null);
+      }
+    );
+  });
+}
 
 /**
  * Resolves the editor build for both the workspace and the installed package.
@@ -454,14 +492,18 @@ export async function runCli(
   argv: string[],
   overrides: Partial<CliIO> = {}
 ): Promise<number> {
-  const io: CliIO = { cwd: process.cwd(), ...DEFAULT_STREAMS, ...overrides };
+  const tty = overrides.tty ?? Boolean(process.stderr.isTTY);
+  const io: CliIO = { cwd: process.cwd(), tty, ...DEFAULT_STREAMS, ...overrides };
   let exitCode = 0;
+  const updateCheck = shouldCheckForUpdates(argv, tty)
+    ? checkForUpdate({ currentVersion: CLI_VERSION })
+    : null;
 
   const program = new Command();
   program
     .name('htmlcraft')
     .description('Visual editor and tooling for static HTML presentations')
-    .version('0.1.1')
+    .version(CLI_VERSION)
     .exitOverride();
   program.configureOutput({
     writeOut: (text) => io.stdout(text.replace(/\n$/, '')),
@@ -1170,6 +1212,11 @@ export async function runCli(
     }
     io.stderr(error instanceof Error ? error.message : String(error));
     return 1;
+  }
+
+  if (updateCheck) {
+    const result = await waitForPromise(updateCheck, CLI_UPDATE_WAIT_MS);
+    if (result?.notice) io.stderr(result.notice);
   }
 
   return exitCode;
