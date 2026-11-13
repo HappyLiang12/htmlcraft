@@ -9,6 +9,8 @@
   `htmlppt` URLs.
 - The CLI `--version`, the host health payload, and the MCP `serverInfo`
   report `0.1.1` instead of the stale `0.1.0`.
+- `hono` is updated to `4.13.18`, closing five moderate advisories that the
+  release audit rejects.
 
 ### Changed
 
