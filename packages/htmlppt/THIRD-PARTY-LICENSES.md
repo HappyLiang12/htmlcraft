@@ -831,7 +831,7 @@ The complete list of contributors can be found at:
 
 ---
 
-## hono 4.13.13
+## hono 4.13.18
 
 License: MIT
 
