@@ -219,13 +219,16 @@ Releases are manual and never run from a pull request:
    (`id-token: write`) and stores no long-lived npm token. A new trusted
    publisher expires if its first publish does not succeed within two days.
 2. Merge the release branch to `main` and wait for the CI matrix to pass.
-3. Run the `Release` workflow from `main`. `dry_run` defaults to `true`; review
-   the dry-run log before dispatching with it disabled.
-4. The job refuses to publish an already-published version, runs
-   `npm audit --omit=dev`, verifies the generated license notices, and runs the
-   package smoke test before `npm publish --provenance`. npm exchanges the
-   GitHub OIDC token for a short-lived publish credential and attaches
-   provenance automatically.
+3. Run `npm run release:check` on the release commit; the CI `Release check`
+   job runs the same script on every pull request. Then run the `Release`
+   workflow from `main`. `dry_run` defaults to `true`; review the dry-run log
+   before dispatching with it disabled.
+4. `release:check` runs the production audit, builds, requires the generated
+   license notices to match the commit, runs the package smoke test, refuses
+   an already-published version, and finishes with `npm publish --dry-run`.
+   The release job then runs the same script before
+   `npm publish --provenance`; npm exchanges the GitHub OIDC token for a
+   short-lived publish credential and attaches provenance automatically.
 
 `0.1.0` was the one-time bootstrap publish made before the trusted publisher
 existed; every later release goes through OIDC.

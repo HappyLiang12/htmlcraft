@@ -33,27 +33,12 @@ jobs:
         run: npm install -g npm@11
       - name: Install
         run: npm ci
-      - name: Production audit
-        run: npm audit --omit=dev
-      - name: Build
-        run: npm run build
-      - name: Check generated license notices
-        run: git diff --exit-code -- packages/htmlppt/THIRD-PARTY-LICENSES.md
-      - name: Package smoke
-        run: node scripts/package-smoke.mjs
-      - name: Check version is unpublished
-        run: |
-          VERSION=$(node -p "require('./packages/htmlppt/package.json').version")
-          if npm view "htmlcraft@$VERSION" version >/dev/null 2>&1; then
-            echo "htmlcraft@$VERSION is already published"
-            exit 1
-          fi
+      # Same script the CI release-check job runs on every pull request.
+      - name: Release checks
+        run: npm run release:check
       # Trusted publishing: npm detects the GitHub Actions OIDC environment and
       # exchanges the id-token for a short-lived publish credential. The
       # trusted publisher on npmjs.com must name this workflow and environment.
-      - name: Publish dry run
-        if: inputs.dry_run
-        run: npm publish -w htmlcraft --access public --dry-run
       - name: Publish with provenance
         if: ${{ !inputs.dry_run }}
         run: npm publish -w htmlcraft --provenance --access public
